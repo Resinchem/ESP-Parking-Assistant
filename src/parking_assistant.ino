@@ -2,7 +2,7 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.30
+ * Version: 0.31
  * Last Updated: 11/13/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.30 (ESP8266)"
+#define VERSION "v0.31 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -596,8 +596,13 @@ void updateSettings(bool saveBoot) {
     updateBootSettings();
   }
   //Update FastLED with new brightness
-  FastLED.setBrightness(activeBrightness);
+  if (isAwake) {
+    FastLED.setBrightness(activeBrightness);
+  } else {
+    FastLED.setBrightness(sleepBrightness);
+  }
 }
+
 
 void updateBootSettings() {
   // Writes new settings to SPIFFS (new boot defaults)
@@ -1065,6 +1070,11 @@ void setup() {
   maxOperationTimeExit = (String(led_exit_time)).toInt();
   activeBrightness = (String(led_brightness_active)).toInt();
   sleepBrightness = (String(led_brightness_sleep)).toInt();
+  if (sleepBrightness == 0) {
+    showStandbyLEDs = false;
+  } else {
+    showStandbyLEDs = true;
+  }
   wakeDistance = (String(wake_mils)).toInt();
   startDistance = (String(start_mils)).toInt();
   parkDistance = (String(park_mils)).toInt();

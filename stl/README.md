@@ -1,2 +1,2 @@
-# ESP-Parking-Assistant
-A simplified garage parking assistant using ESP8266 and WS2812b LEDs
+## 3D Printed Parts
+This contains the .stl design files for the enclosure shown in the video.

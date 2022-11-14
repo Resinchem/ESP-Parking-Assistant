@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.31
- * Last Updated: 11/13/2022
+ * Version: 0.32
+ * Last Updated: 11/14/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.31 (ESP8266)"
+#define VERSION "v0.32 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -594,12 +594,15 @@ void updateSettings(bool saveBoot) {
   // Will be overwritten with reboot/reset/OTAUpdate
   if (saveBoot) {
     updateBootSettings();
-  }
-  //Update FastLED with new brightness
-  if (isAwake) {
-    FastLED.setBrightness(activeBrightness);
   } else {
-    FastLED.setBrightness(sleepBrightness);
+    //Update FastLED with new brightness values if changed
+    if (isAwake) {
+      FastLED.setBrightness(activeBrightness);
+    } else {
+      FastLED.setBrightness(sleepBrightness);
+    }
+    // Set interval distance based on current Effect if changed
+    intervalDistance = calculateInterval();
   }
 }
 

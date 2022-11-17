@@ -1,4 +1,4 @@
-## An ESP8266 and WS2812b Parking Assistant
+## An ESP8266 and WS2812b LED Parking Assistant
 
 A simple to build and use garage parking assistant using an ESP8266 and WS2812b LEDs.  Using a low cost Wemos D1 Mini, a short strip of around 20-40 WS2812b LED pixels and TFMini-s LIDAR distance sensor, a visual parking assistant system for putting your car in the same location in the garage each time can easily be created.
 

@@ -8,3 +8,5 @@ Once created, the entities should be available in Home Assistant for use on your
 ![HA_MQTT_Entities](https://user-images.githubusercontent.com/55962781/202325999-6794bae9-5fa3-4b59-9b48-055500748423.jpg)
 
 Note that when first created, these entities may have a state of 'Unknown' until the controller updates its MQTT values based on the telemetry period set in the controller's MQTT options.  See the wiki section on Using the Web Interface and MQTT for more details.
+
+Note that MQTT is optional for the project and it is not required and can be disabled at any time via the web settings.

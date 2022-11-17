@@ -11,7 +11,7 @@ Some key features of the system include:
 - All options and settings made through a web interface
 - Over-the-air firmware updates, with a manual OTA option available for uploading your own modified source code
 
-See the wiki for full details on installation, configuration, settings and options.
+### See the [wiki](https://github.com/Resinchem/ESP-Parking-Assistant/wiki) for full details on installation, configuration, settings and options.
 
 **Note**: This repo only deals with the firmware/software application. For an overview of the build details and to see some of the features in use, please see this YouTube video.
 

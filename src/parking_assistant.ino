@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.34
- * Last Updated: 11/27/2022
+ * Version: 0.40 - Changed TFMini library to add support for TFMini V1.8.1
+ * Last Updated: 12/2/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -19,13 +19,13 @@
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 #include <WiFiClient.h>
 #include <ESP8266HTTPUpdateServer.h>
-#include <TFMini.h>               //https://github.com/opensensinglab/tfmini
+#include <TFMPlus.h>               //https://github.com/budryerson/TFMini-Plus
 #include <PubSubClient.h>
 
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.34 (ESP8266)"
+#define VERSION "v0.40 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -34,14 +34,14 @@
 
 #define LED_DATA_PIN D6                     // Pin connected to LED strip DIN
 #define WIFIMODE 2                          // 0 = Only Soft Access Point, 1 = Only connect to local WiFi network with UN/PW, 2 = Both
-#define WIFIHOSTNAME "ESP_ParkAsst"         // Host name for WiFi/Router
 #define MQTTMODE 1                          // 0 = Disable MQTT, 1 = Enable (will only be enabled if WiFi mode = 1 or 2 - broker must be on same network)
-#define MQTTCLIENT "parkasst"               // MQTT Client Name
-#define MQTT_TOPIC_SUB "cmnd/parkasst"      // Default MQTT subscribe topic
-#define MQTT_TOPIC_PUB "stat/parkasst"      // Default MQTT publish topic
-#define OTA_HOSTNAME "ParkAssistOTA"        // Hostname to broadcast as port in the IDE of OTA Updates
 #define SERIAL_DEBUG 0                      // 0 = Disable (must be disabled if using RX/TX pins), 1 = enable
 #define NUM_LEDS_MAX 100                    // For initialization - recommend actual max 50 LEDs if built as shown
+#define WIFIHOSTNAME "ESP_ParkAsst"         // Host name for WiFi/Router
+#define MQTTCLIENT "parkasst"               // MQTT Client Name
+#define OTA_HOSTNAME "ParkAssistOTA"        // Hostname to broadcast as port in the IDE of OTA Updates
+#define MQTT_TOPIC_SUB "cmnd/parkasst"      // Default MQTT subscribe topic
+#define MQTT_TOPIC_PUB "stat/parkasst"      // Default MQTT publish topic
 
 bool ota_flag = true;                       // Must leave this as true for board to broadcast port to IDE upon boot
 uint16_t ota_boot_time_window = 2500;       // minimum time on boot for IP address to show in IDE ports, in millisecs
@@ -175,7 +175,8 @@ WiFiManager wifiManager;
 #if defined(MQTTMODE) && (MQTTMODE == 1 && (WIFIMODE == 1 || WIFIMODE == 2))
   PubSubClient client(espClient);
 #endif
-TFMini tfmini;
+
+TFMPlus tfmini;
 CRGB LEDs[NUM_LEDS_MAX];  
 
 //---- Captive Portal -------
@@ -873,7 +874,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
    * };
    */
 }
-// ====================================
 
 // ==================================
 //  Main Setup
@@ -1192,6 +1192,7 @@ void setup() {
   // TFMini uses Serial pins, so SERIAL_DEBUB must be 0 - otherwise only zero distance will be reported
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 0)
   Serial.begin(115200);
+  delay(20);
   tfmini.begin(&Serial);
   tfMiniEnabled = true;
 #endif
@@ -1246,14 +1247,21 @@ void loop() {
     
   }
   uint32_t currentMillis = millis();
-  uint16_t tf_dist = 0;
-  
+  int16_t tf_dist = 0;
+  int16_t distance = 0;
+
+  //Attempt to get reading from TFMini
   if (tfMiniEnabled) {
-    tf_dist = (tfmini.getDistance() * 10);  //Convert to mm
+    if (tfmini.getData(distance)) {
+      tf_dist = distance * 10;
+    } else {
+      tf_dist = 8888;  //Default value if reading unsuccessful
+    }
   } else {
-    tf_dist = 65533;  //out of range, invalid reading or not enabled
+    tf_dist = 9999;  //Default value if TFMini not enabled (serial connection failed)
   }
 
+  //Determine if car (or other object) present in any zones
   if (tf_dist <= wakeDistance) {
     if (!carDetected) {
       carDetectedCounter ++;
@@ -1282,6 +1290,7 @@ void loop() {
     }
   }
 
+  //Update LEDs
   if ((carDetected) && (isAwake)) {
     if (tf_dist <= backupDistance) {
       //Beyond minimum distance - flash backup!
@@ -1311,6 +1320,7 @@ void loop() {
     }
   }
  
+  //Put system to sleep if parking or exit time elapsed 
   uint32_t elapsedTime = currentMillis - startTime;
   if (((elapsedTime > (maxOperationTimePark * 1000)) && (parkSleepTimerStarted)) || ((elapsedTime > (maxOperationTimeExit * 1000)) && (exitSleepTimerStarted  ))) {
     updateSleepMode();
@@ -1319,8 +1329,10 @@ void loop() {
     exitSleepTimerStarted = false;
     parkSleepTimerStarted = false;
   }
-  //Update LED Strip
+
+  //Show/Refresh LED Strip
   FastLED.show();
+
   //Update MQTT Stats per tele period
   if (mqttEnabled) {
     if ((currentMillis - mqttLastUpdate) > (mqttTelePeriod * 1000)) {
@@ -1333,8 +1345,8 @@ void loop() {
       byte carStatus = 0;
       float measureDistance = 0;
       if (carDetected) carStatus = 1;
-      if (tf_dist > 4876) {
-        measureDistance = 192.0;
+      if (tf_dist > 4999) {
+        measureDistance = tf_dist * 1.0 ;
       } else {
         measureDistance = tf_dist / 25.4;
       }

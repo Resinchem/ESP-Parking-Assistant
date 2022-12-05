@@ -2,14 +2,14 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.40 - Changed TFMini library to add support for TFMini V1.8.1
- * Last Updated: 12/2/2022
+ * Version: 0.41 - Support for multiple devices and UOM
+ * Last Updated: 12/5/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
  */
 #include <FS.h>                   
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager (must be v2.0.8-beta or later)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
@@ -25,23 +25,18 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.40 (ESP8266)"
+#define VERSION "v0.41(ESP8266)"
 
 // ================================
 //  User Defined values and options
 // ================================
-//  Change default values here. Changing any of these (except MQTTMODE) require a recompile and uploade.
+//  Change default values here. Changing any of these requires a recompile and upload.
 
 #define LED_DATA_PIN D6                     // Pin connected to LED strip DIN
 #define WIFIMODE 2                          // 0 = Only Soft Access Point, 1 = Only connect to local WiFi network with UN/PW, 2 = Both
 #define MQTTMODE 1                          // 0 = Disable MQTT, 1 = Enable (will only be enabled if WiFi mode = 1 or 2 - broker must be on same network)
 #define SERIAL_DEBUG 0                      // 0 = Disable (must be disabled if using RX/TX pins), 1 = enable
 #define NUM_LEDS_MAX 100                    // For initialization - recommend actual max 50 LEDs if built as shown
-#define WIFIHOSTNAME "ESP_ParkAsst"         // Host name for WiFi/Router
-#define MQTTCLIENT "parkasst"               // MQTT Client Name
-#define OTA_HOSTNAME "ParkAssistOTA"        // Hostname to broadcast as port in the IDE of OTA Updates
-#define MQTT_TOPIC_SUB "cmnd/parkasst"      // Default MQTT subscribe topic
-#define MQTT_TOPIC_PUB "stat/parkasst"      // Default MQTT publish topic
 
 bool ota_flag = true;                       // Must leave this as true for board to broadcast port to IDE upon boot
 uint16_t ota_boot_time_window = 2500;       // minimum time on boot for IP address to show in IDE ports, in millisecs
@@ -53,13 +48,19 @@ uint16_t ota_time = ota_boot_time_window;
 // LED Setup & Portal Options
 //==========================
 // Defaults values - these will be set/overwritten by portal or last saved vals on reboot
-int numLEDs = 36;        
-byte activeBrightness = 200;
-byte sleepBrightness = 10;
+int numLEDs = 30;        
+byte activeBrightness = 100;
+byte sleepBrightness = 5;
 uint32_t maxOperationTimePark = 60;
 uint32_t maxOperationTimeExit = 5;
 String ledEffect_m1 = "Out-In";
 bool showStandbyLEDs = true;
+//New with v4.1 for multi-device support
+String deviceName = "parkasst";
+String wifiHostName = "parkasst";
+String otaHostName = "parkasstOTA";
+String mqttClient = "parkasst";
+
 
 CRGB ledColorOn_m1 = CRGB::White;
 CRGB ledColorOff = CRGB::Black;
@@ -76,16 +77,17 @@ byte webColorActive = 1;   //Yellow
 byte webColorParked = 0;   //Red
 byte webColorBackup = 0;   //Red
 
-//Initial distances for testing (will eventually be loaded from flash)
+//Initial distances for default load (only used for initial onboarding)
+byte uomDistance = 0;       // 0=inches, 1=centimeters
 int wakeDistance = 3048;    // wake/sleep distance (~10ft)
 int startDistance = 1829;   // Start countdown distance (~6')
 int parkDistance = 610;     // Final parked distacce (~2')
-int backupDistance = 482;   // Flash backup distance (~19")
+int backupDistance = 457;   // Flash backup distance (~18")
 
 // ===============================
 //  MQTT Variables
 // ===============================
-//  MQTT will only be used if a server address other than '0.0.0.0' is used during init setup
+//  MQTT will only be used if a server address other than '0.0.0.0' is entered via portal
 byte mqttAddr_1 = 0;
 byte mqttAddr_2 = 0;
 byte mqttAddr_3 = 0;
@@ -95,9 +97,11 @@ String mqttUser = "myusername";
 String mqttPW = "mypassword";
 uint16_t mqttTelePeriod = 60;
 uint32_t mqttLastUpdate = 0;
+String mqttTopicSub ="parkasst";  //v0.41 (for now, will always be same as pub)
+String mqttTopicPub = "parkasst"; //v0.41 
 
 bool mqttEnabled = false;         //Will be enabled/disabled depending on whether a valid IP address is defined in Settings (0.0.0.0 disables MQTT)
-bool mqttConnected = false;       //Will be enabled if defined and successful connnection made.  This var should be checked upon any MQTT actin.
+bool mqttConnected = false;       //Will be enabled if defined and successful connnection made.  This var should be checked upon any MQTT action.
 
 // ===============================
 //  Effects and Color arrays 
@@ -138,12 +142,16 @@ bool exitSleepTimerStarted = false;
 bool parkSleepTimerStarted = false;
 
 //VARIABLES FOR PORTAL USE (JSON vars)
+char device_name[18];    //v0.41
+char wifi_hostname[18];  //v0.41
+char ota_hostname[18];   //v0.41
 char led_count[4];
 char led_park_time[4];
 char led_exit_time[4];
 char led_brightness_active[4];
 char led_brightness_sleep[4];
 
+char uom_distance[4];
 char wake_mils[6];
 char start_mils[6];
 char park_mils[6];
@@ -164,6 +172,8 @@ char mqtt_port[6];
 char mqtt_user[31];
 char mqtt_pw[31];
 char mqtt_tele_period[4];
+char mqtt_topic_sub[18];   //v0.41
+char mqtt_topic_pub[18];   //v0.41
 
 String baseIP;
 //---------------------------
@@ -182,8 +192,8 @@ CRGB LEDs[NUM_LEDS_MAX];
 //---- Captive Portal -------
 //flag for saving data in captive portal
 bool shouldSaveConfig = false;
-//callback notifying us of the need to save config
 
+//callback notifying us of the need to save config
 void saveConfigCallback () {
   shouldSaveConfig = true;
 }
@@ -236,11 +246,18 @@ void defineColors() {
 // Main Settings page
 // Root / Main Settings page handler
 void handleRoot() {
-  //Convert mm back oto inches and round to nearest integer
-  byte intWakeDistance = ((wakeDistance / 25.4) + 0.5);
-  byte intStartDistance = ((startDistance / 25.4) + 0.5);
-  byte intParkDistance = ((parkDistance / 25.4) + 0.5);
-  byte intBackupDistance = ((backupDistance / 25.4) + 0.5);
+  //Convert mm back to inches and round to nearest integer
+  uint16_t intWakeDistance = ((wakeDistance / 25.4) + 0.5);
+  uint16_t intStartDistance = ((startDistance / 25.4) + 0.5);
+  uint16_t intParkDistance = ((parkDistance / 25.4) + 0.5);
+  uint16_t intBackupDistance = ((backupDistance / 25.4) + 0.5);
+  //If using centimeters, convert from millimeters
+  if (uomDistance) {
+    intWakeDistance = wakeDistance;
+    intStartDistance = startDistance;
+    intParkDistance = parkDistance;
+    intBackupDistance = backupDistance;
+  }
   String mainPage = "<html>\
   <head>\
     <title>Parking Assistant - Main</title>\
@@ -249,10 +266,10 @@ void handleRoot() {
     </style>\
   </head>\
   <body>\
-    <h1>Controller Settings</h1><br>\
+    <h1>Controller Settings (VAR_DEVICE_NAME)</h1><br>\
     Changes made here will be used <b><i>until the controller is restarted</i></b>, unless the box to save the settings as new boot defaults is checked.<br><br>\
     To test settings, leave the box unchecked and click 'Update'. Once you have settings you'd like to keep, check the box and click 'Update' to write the settings as the new boot defaults.<br><br>\
-    If you need to change wifi or MQTT settings, you must use the 'Reset All' command.<br><br>\
+    If you want to change wifi settings or the device name, you must use the 'Reset All' command.<br><br>\
     <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postform/\">\
       <table>\
       <tr>\
@@ -290,29 +307,78 @@ void handleRoot() {
       <b><u>Parking Distances</u></b>:<br>\
       These values, in inches, specify when the LED strip wakes (Wake distance), when the countdown starts (Active distance), when the car is in the desired parked position (Parked distance) or when it has pulled too far forward and should back up (Backup distance).<br><br>\
       See the <a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/04-Using-the-Web-Interface\">Github wiki</a> for more information on setting these values for your situation. \
-      You may enter decimal values (e.g. 27.5\") and these will be converted to millimeters in the code.  Values should decrease from Wake through Backup... maximum value is 192 inches (16 ft) and minimum value is 12 inches (1 ft).<br><br>\
+      If using inches, you may enter decimal values (e.g. 27.5\") and these will be converted to millimeters in the code.  Values should decrease from Wake through Backup... maximum value is 192 inches (4980 mm) and minimum value is 12 inches (305 mm).<br><br>\
       <table>\
       <tr>\
-      <td><label for=\"wakedistance\">Wake Distance:</label></td>\
-      <td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"wakedistance\" value=\"";
-  mainPage += String(intWakeDistance);    
-  mainPage += "\"> inches</td>\
-      </tr>\
-      <td><label for=\"activedistance\">Active Distance:</label></td>\
-      <td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"activedistance\" value=\"";
-  mainPage += String(intStartDistance);     
-  mainPage += "\"> inches</td>\
-      </tr>\
-      <td><label for=\"parkeddistance\">Parked Distance:</label></td>\
-      <td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"parkeddistance\" value=\"";
-  mainPage += String(intParkDistance);     
-  mainPage += "\"> inches</td>\
-      </tr>\
-      <td><label for=\"backupistance\">Backup Distance:</label></td>\
-      <td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"backupdistance\" value=\"";
-  mainPage += String(intBackupDistance);     
-  mainPage += "\"> inches</td>\
-      </tr>\
+      <td>Show distances in:</td>\
+      <td><input type=\"radio\" id=\"inches\" name=\"uom\" value=\"0\"";
+      if (!uomDistance) {
+        mainPage += " checked=\"checked\">";
+      } else {
+        mainPage += ">";
+      }
+  mainPage += "<label for=\"inches\">Inches</label>&nbsp;&nbsp;\
+      <input type=\"radio\" id=\"mm\" name=\"uom\" value=\"1\"";
+      if (uomDistance) {
+        mainPage += " checked=\"checked\">";
+      } else {
+        mainPage += ">";        
+      }
+  mainPage += "<label for=\"mm\">Millimeters</label>&nbsp;&nbsp;\      
+      (you must update settings to switch units)</td></tr>\
+      <tr>\
+      <td><label for=\"wakedistance\">Wake Distance:</label></td>";
+
+  if (uomDistance) {
+    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"wakedistance\" value=\"";   
+    mainPage += String(intWakeDistance); 
+    mainPage += "\"> mm</td>";
+  } else {
+    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"wakedistance\" value=\"";
+    mainPage += String(intWakeDistance); 
+    mainPage += "\"> inches</td>";
+  }
+
+  mainPage += "</tr>\
+      <tr>\
+      <td><label for=\"activedistance\">Active Distance:</label></td>";
+  if (uomDistance) {
+    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"activedistance\" value=\"";
+    mainPage += String(intStartDistance);     
+    mainPage += "\"> mm</td>";
+  } else {
+    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"activedistance\" value=\"";
+    mainPage += String(intStartDistance);     
+    mainPage += "\"> inches</td>";
+  }
+  
+  mainPage += "</tr>\
+      <tr>\
+      <td><label for=\"parkeddistance\">Parked Distance:</label></td>";
+  if (uomDistance) {
+    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"parkeddistance\" value=\"";
+    mainPage += String(intParkDistance);
+    mainPage += "\"> mm</td>";
+  } else {
+    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"parkeddistance\" value=\"";
+    mainPage += String(intParkDistance);
+    mainPage += "\"> inches</td>";
+  }
+
+  mainPage += "</tr>\
+      <tr>\
+      <td><label for=\"backupistance\">Backup Distance:</label></td>";
+  if (uomDistance) {
+    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"backupdistance\" value=\"";
+    mainPage += String(intBackupDistance);
+    mainPage += "\"> mm</td>";
+  } else {
+    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"backupdistance\" value=\"";
+    mainPage += String(intBackupDistance);
+    mainPage += "\"> inches</td>";
+  }
+
+  mainPage += "</tr>\
       </table><br>\
       <b><u>LED Colors</b></u>:<br>\
       Select LED color to be used for each stage of the parking process.  Colors may be duplicated, but transition from one state to another may not be obvious based on effect chosen.<br><br>\
@@ -420,10 +486,15 @@ void handleRoot() {
   mainPage += mqttPW;
   mainPage += "\"></td></tr>\
       <tr>\
+      <td><label for=\"mqtttopic\">MQTT Topic: &nbsp;&nbsp; stat/</label></td>\
+      <td><input type=\"text\" name=\"mqtttopic\" maxlength=\"16\" value=\"";
+  mainPage += mqttTopicPub;
+
+  mainPage += "\"> (16 alphanumeric chars max - no spaces, no symbols)</td></tr>\
+      <tr>\
       <td><label for=\"mqttperiod\">Telemetry Period:</label></td>\
       <td><input type=\"number\" min=\"60\" max=\"600\" step=\"1\" name=\"mqttperiod\" style=\"width: 50px\;\" value=\"";
   mainPage += String(mqttTelePeriod);
-    
   mainPage += "\"> seconds (60 min, 600 max)</td></tr>\
       </table><br>\
       <input type=\"checkbox\" name=\"chksave\" value=\"save\">Save all settings as new boot defaults (controller will reboot)<br><br>\
@@ -443,6 +514,7 @@ void handleRoot() {
     Current version: VAR_CURRRENT_VER\
   </body>\
 </html>";
+  mainPage.replace("VAR_DEVICE_NAME", deviceName); 
   mainPage.replace("VAR_CURRRENT_VER", VERSION);
   server.send(200, "text/html", mainPage);
 }
@@ -469,10 +541,47 @@ void handleForm() {
     }
     maxOperationTimePark = server.arg("ledparktime").toInt();
     maxOperationTimeExit = server.arg("ledexittime").toInt();
-    wakeDistance = ((server.arg("wakedistance").toInt()) * 25.4);  //convert to mm
-    startDistance = ((server.arg("activedistance").toInt()) * 25.4);
-    parkDistance = ((server.arg("parkeddistance").toInt()) * 25.4);
-    backupDistance = ((server.arg("backupdistance").toInt()) * 25.4);
+    
+    byte tmpUOM = server.arg("uom").toInt();
+    if (tmpUOM != uomDistance) {
+      //UOM has changed. Convert distances
+      if (tmpUOM) {
+        //Was inches... convert to mm
+        wakeDistance = ((server.arg("wakedistance").toInt()) * 25.4);  
+        startDistance = ((server.arg("activedistance").toInt()) * 25.4);
+        parkDistance = ((server.arg("parkeddistance").toInt()) * 25.4);
+        backupDistance = ((server.arg("backupdistance").toInt()) * 25.4);
+       
+      } else {
+        //Was mm... just get server val
+        wakeDistance = (server.arg("wakedistance").toInt());
+        startDistance = (server.arg("activedistance").toInt());
+        parkDistance = (server.arg("parkeddistance").toInt());
+        backupDistance = (server.arg("backupdistance").toInt());
+      }
+    } else {
+      //no uom change... just set to server arg value
+      if (uomDistance) {
+        wakeDistance = (server.arg("wakedistance").toInt());
+        startDistance = (server.arg("activedistance").toInt());
+        parkDistance = (server.arg("parkeddistance").toInt());
+        backupDistance = (server.arg("backupdistance").toInt());
+      } else {
+        //convert all values to mm
+        wakeDistance = ((server.arg("wakedistance").toInt()) * 25.4);  
+        startDistance = ((server.arg("activedistance").toInt()) * 25.4);
+        parkDistance = ((server.arg("parkeddistance").toInt()) * 25.4);
+        backupDistance = ((server.arg("backupdistance").toInt()) * 25.4);
+      }
+    }
+    
+    uomDistance = server.arg("uom").toInt();
+    //for displaying inches on page
+    uint16_t intWakeDistance = ((wakeDistance / 25.4) + 0.5);
+    uint16_t intStartDistance = ((startDistance / 25.4) + 0.5);
+    uint16_t intParkDistance = ((parkDistance / 25.4) + 0.5);
+    uint16_t intBackupDistance = ((backupDistance / 25.4) + 0.5);
+    
     ledColorWake = ColorCodes[webColorWake];
     ledColorActive = ColorCodes[webColorActive];
     ledColorParked = ColorCodes[webColorParked];
@@ -489,6 +598,8 @@ void handleForm() {
     mqttUser = server.arg("mqttuser");
     mqttPW = server.arg("mqttpw");
     mqttTelePeriod = server.arg("mqttperiod").toInt();
+    mqttTopicSub = server.arg("mqtttopic");
+    mqttTopicPub = server.arg("mqtttopic");
     
     saveSettings = server.arg("chksave");
     
@@ -502,17 +613,29 @@ void handleForm() {
       <body>\
       <H1>Settings updated!</H1><br>\
       <H3>Current values are:</H3>";
+    message += "Device Name: " + deviceName + "<br>";
     message += "Num LEDs: " + server.arg("leds") + "<br>";
     message += "Active Brightness: " + server.arg("activebrightness") + "<br>";
     message += "Standby Brightness: " + server.arg("sleepbrightness") + "<br><br>";
     message += "<b>LED active On Times</b><br><br>";
     message += "Park Time: " + server.arg("ledparktime") + " secs.<br>";
     message += "Exit Time: " + server.arg("ledexittime") + " secs.<br><br>";
-    message += "<b>Parking Distances inches (millimeters)</b><br><br>";
-    message += "Wake Distance: " + server.arg("wakedistance") + " (" + String(wakeDistance) + ")<br>";
-    message += "Active Distance: " + server.arg("activedistance") + " (" + String(startDistance) + ")<br>";
-    message += "Parked Distance: " + server.arg("parkeddistance") + " (" + String(parkDistance) + ")<br>";
-    message += "Backup Distance: " + server.arg("backupdistance") + " (" + String(backupDistance) + ")<br><br>";
+    if (uomDistance) {
+      message += "<b>Parking Distances milimeters (inches)</b><br><br>";
+      message += "Wake Distance: " + String(wakeDistance) + " (" + String(intWakeDistance) + ")<br>";
+      message += "Active Distance: " + String(startDistance) + " (" + String(intStartDistance) + ")<br>";
+      message += "Parked Distance: " + String(parkDistance) + " (" + String(intParkDistance) + ")<br>";
+      message += "Backup Distance: " + String(backupDistance) + " (" + String(intBackupDistance) + ")<br><br>";
+      
+    } else {
+      message += "<b>Parking Distances inches (millimeters)</b><br><br>";
+      message += "Wake Distance: " + String(intWakeDistance) + " (" + String(wakeDistance) + ")<br>";
+      message += "Active Distance: " + String(intStartDistance) + " (" + String(startDistance) + ")<br>";
+      message += "Parked Distance: " + String(intParkDistance) + " (" + String(parkDistance) + ")<br>";
+      message += "Backup Distance: " + String(intBackupDistance) + " (" + String(backupDistance) + ")<br><br>";
+//      message += "Backup Distance: " + server.arg("backupdistance") + " (" + String(backupDistance) + ")<br><br>";
+      
+    }
     message += "<b>LED Colors and Effect</b>:<br><br>";
     message += "Wake Color: " + WebColors[webColorWake] + "<br>";
     message += "Active Color: " + WebColors[webColorActive] + "<br>";
@@ -531,6 +654,7 @@ void handleForm() {
       message += "MQTT Port: " + server.arg("mqttport") + "<br>";
       message += "MQTT User: " + server.arg("mqttuser") + "<br>";
       message += "MQTT Password: ***********<br>";
+      message += "MQTT Topic: stat/" + server.arg("mqtttopic") + "<br>";
       message += "Telemetry Period: " + server.arg("mqttperiod") + " seconds<br>";
       if (saveSettings != "save") {
         message += "<br>(If you just changed MQTT settings, you must save as new boot defaults for this to take effect)<br>";
@@ -540,7 +664,7 @@ void handleForm() {
     if (saveSettings == "save") {
       message += "<br>";
       message += "<b>New settings saved as boot defaults.</b> Controller will now reboot.<br>";
-      message += "You can return to the settings page after boot completes (lights will briefly turn blue to indicate completed boot).<br>";    
+      message += "You can return to the settings page after boot completes (lights will briefly turn blue then red/green to indicate completed boot).<br>";    
     } else {
       //Wake up system so new setting can be seen/tested... even if car present
       carDetectedCounter = carDetectedCounterMax + 1;
@@ -597,7 +721,7 @@ void updateSettings(bool saveBoot) {
   // This updates the current local settings for current session only.  
   // Will be overwritten with reboot/reset/OTAUpdate
   if (saveBoot) {
-    updateBootSettings();
+    updateBootSettings(saveBoot);
   } else {
     //Update FastLED with new brightness values if changed
     if (isAwake) {
@@ -611,13 +735,14 @@ void updateSettings(bool saveBoot) {
 }
 
 
-void updateBootSettings() {
+void updateBootSettings(bool restart_ESP) {
   // Writes new settings to SPIFFS (new boot defaults)
   char t_led_count[4];
   char t_led_brightness_active[4];
   char t_led_brightness_sleep[4];
   char t_led_park_time[4];
   char t_led_exit_time[4];
+  char t_uom_distance[4];
   char t_wake_mils[6];
   char t_start_mils[6];
   char t_park_mils[6];
@@ -639,7 +764,12 @@ void updateBootSettings() {
   char t_mqtt_tele_period[4];
   int user_len = 31;
   int user_pw = 31;
-  
+  //v0.41 new values
+  char t_device_name[18];
+  char t_mqtt_topic_sub[18];
+  char t_mqtt_topic_pub[18];
+  int dev_name_len = 18;
+  int topic_len = 18;
   #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
     Serial.println("Attempting to update boot settings");
   #endif
@@ -650,6 +780,7 @@ void updateBootSettings() {
   sprintf(t_led_brightness_sleep, "%u", sleepBrightness);
   sprintf(t_led_park_time, "%u", maxOperationTimePark);
   sprintf(t_led_exit_time, "%u", maxOperationTimeExit);
+  sprintf(t_uom_distance, "%u", uomDistance);
   sprintf(t_wake_mils, "%u", wakeDistance);
   sprintf(t_start_mils, "%u", startDistance);
   sprintf(t_park_mils, "%u", parkDistance);
@@ -668,7 +799,9 @@ void updateBootSettings() {
   sprintf(t_mqtt_tele_period, "%u", mqttTelePeriod);
   mqttUser.toCharArray(t_mqtt_user, user_len);
   mqttPW.toCharArray(t_mqtt_pw, user_pw);
-  
+  deviceName.toCharArray(t_device_name, dev_name_len);
+  mqttTopicSub.toCharArray(t_mqtt_topic_sub, topic_len);
+  mqttTopicPub.toCharArray(t_mqtt_topic_pub, topic_len);
 
 #ifdef ARDUINOJSON_VERSION_MAJOR >= 6
     DynamicJsonDocument json(1024);
@@ -682,6 +815,7 @@ void updateBootSettings() {
     json["led_brightness_sleep"] = t_led_brightness_sleep;
     json["led_park_time"] = t_led_park_time;
     json["led_exit_time"] = t_led_exit_time;
+    json["uom_distance"] = t_uom_distance;
     json["wake_mils"] = t_wake_mils;
     json["start_mils"] = t_start_mils;
     json["park_mils"] = t_park_mils;
@@ -700,6 +834,10 @@ void updateBootSettings() {
     json["mqtt_tele_period"] = t_mqtt_tele_period;
     json["mqtt_user"] = t_mqtt_user;
     json["mqtt_pw"] = t_mqtt_pw;
+    //v0.41
+    json["device_name"] = t_device_name;
+    json["mqtt_topic_sub"] = t_mqtt_topic_sub;
+    json["mqtt_topic_pub"] = t_mqtt_topic_pub;
 
   File configFile = SPIFFS.open("/config.json", "w");
   if (!configFile) {
@@ -721,7 +859,9 @@ void updateBootSettings() {
     Serial.println("Boot settings saved. Rebooting controller.");
   #endif
   
-  ESP.restart();
+  if (restart_ESP) {   //Needed so initial onboarding doesn't cause second reboot
+    ESP.restart();
+  }
 }
 
 void handleReset() {
@@ -804,7 +944,7 @@ bool setup_mqtt() {
     #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
       Serial.print(".");
     #endif
-    client.connect(MQTTCLIENT, mqttUser.c_str(), mqttPW.c_str());
+    client.connect(mqttClient.c_str(), mqttUser.c_str(), mqttPW.c_str());
     if (mcount >= 60) {
       #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
         Serial.println();
@@ -820,8 +960,8 @@ bool setup_mqtt() {
     Serial.println();
     Serial.println("Successfully connected to MQTT broker.");
   #endif
-  client.subscribe(MQTT_TOPIC_SUB"/#");
-  client.publish(MQTT_TOPIC_PUB"/mqtt", "connected", true);
+  client.subscribe(("cmnd/" + mqttTopicSub + "/#").c_str());
+  client.publish(("stat/" + mqttTopicPub + "/mqtt").c_str(), "connected", true);
   mqttConnected = true;
   return true;
 }
@@ -834,13 +974,13 @@ void reconnect() {
       #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
         Serial.print("Attempting MQTT connection...");
       #endif
-      if (client.connect(MQTTCLIENT, mqttUser.c_str(), mqttPW.c_str())) 
+      if (client.connect(mqttClient.c_str(), mqttUser.c_str(), mqttPW.c_str())) 
       {
         #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
           Serial.println("connected");
         #endif
         // ... and resubscribe
-        client.subscribe(MQTT_TOPIC_SUB"/#");
+        client.subscribe(("cmnd/" + mqttTopicSub + "/#").c_str());
       } 
       else 
       {
@@ -875,33 +1015,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
    */
 }
 
-// ==================================
-//  Main Setup
-// ==================================
-void setup() {
-  // Serial monitor
-  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-    Serial.begin(115200);
-    Serial.println("Booting...");
-  #endif
-
-  //Define Effects and Colors
-  defineEffects();
-  defineColors();
-
-  // -----------------------------------------
-  //  Captive Portal and Wifi Onboarding Setup
-  // -----------------------------------------
-  //clean FS, for testing - uncomment next line ONLY if you wish to wipe current FS
-  //SPIFFS.format();
-
-  // *******************************
-  // read configuration from FS json
-  // *******************************
-  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-    Serial.println("mounting FS...");
-  #endif
-  
+void readConfigFile() {
   if (SPIFFS.begin()) {
     #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
       Serial.println("mounted file system");
@@ -942,6 +1056,7 @@ void setup() {
           strcpy(led_exit_time, json["led_exit_time"]);
           strcpy(led_brightness_active, json["led_brightness_active"]);
           strcpy(led_brightness_sleep, json["led_brightness_sleep"]);
+          strcpy(uom_distance, json["uom_distance"]|"0");                    // Default needed if upgrading to v0.41, because value won't exist in config
           strcpy(wake_mils, json["wake_mils"]);
           strcpy(start_mils, json["start_mils"]);
           strcpy(park_mils, json["park_mils"]);
@@ -960,7 +1075,11 @@ void setup() {
           strcpy(mqtt_tele_period, json["mqtt_tele_period"]);
           strcpy(mqtt_user, json["mqtt_user"]);
           strcpy(mqtt_pw, json["mqtt_pw"]);
-         
+          strcpy(device_name, json["device_name"]|"parkasst");               // Default needed if upgrading to v0.41, because value won't exist in config
+          strcpy(mqtt_topic_sub, json["mqtt_topic_sub"]|"parkasst");         // Default needed if upgrading to v0.41, because value won't exist in config
+          strcpy(mqtt_topic_pub, json["mqtt_topic_pub"]|"parkasst");         // Default needed if upgrading to v0.41, because value won't exist in config
+          //Need to set wifihostname here
+          deviceName = String(device_name);
         } else {
           #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
             Serial.println("failed to load json config");
@@ -974,12 +1093,42 @@ void setup() {
       Serial.println("failed to mount FS");
     #endif
   }
-  //end read
+}
+
+
+// ==================================
+//  Main Setup
+// ==================================
+void setup() {
+  // Serial monitor
+  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+    Serial.begin(115200);
+    Serial.println("Booting...");
+  #endif
+
+  //Define Effects and Colors
+  defineEffects();
+  defineColors();
+
+  // -----------------------------------------
+  //  Captive Portal and Wifi Onboarding Setup
+  // -----------------------------------------
+  //clean FS, for testing - uncomment next line ONLY if you wish to wipe current FS
+  //SPIFFS.format();
+  // *******************************
+  // read configuration from FS json
+  // *******************************
+  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+    Serial.println("mounting FS...");
+  #endif
+  readConfigFile();
 
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-  WiFiManagerParameter custom_led_num("ledCount", "Number of LEDs", led_count, 5, "Number of LEDs (max 100)");
+  
+  WiFiManagerParameter custom_text("<p>Each parking assistant must have a unique name. Letters and numbers only, no spaces, 16 characters max. See the wiki documentation for more info.</p>");
+  WiFiManagerParameter custom_dev_id("devName", "Unique Device Name", "parkasst", 16, " 16 chars/alphanumeric only");
 
   //set config save notify callback
   wifiManager.setSaveConfigCallback(saveConfigCallback);
@@ -988,7 +1137,8 @@ void setup() {
   //wifiManager.setSTAStaticIPConfig(IPAddress(10, 0, 1, 99), IPAddress(10, 0, 1, 1), IPAddress(255, 255, 255, 0));
 
   //add all your parameters here
-  wifiManager.addParameter(&custom_led_num);
+  wifiManager.addParameter(&custom_text);
+  wifiManager.addParameter(&custom_dev_id);
 
   //reset settings - for testing
   //wifiManager.resetSettings();
@@ -1003,7 +1153,7 @@ void setup() {
   //If not supplied, will use ESP + last 7 digits of MAC
   //and goes into a blocking loop awaiting configuration. If a password
   //is desired for the AP, add it after the AP name (e.g. autoConnect("MyApName", "12345678")
-  if (!wifiManager.autoConnect("ESP_ParkingAsst")) {
+  if (!wifiManager.autoConnect("ESP_ParkingAsst")) {  //
     #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
       Serial.println("failed to connect and hit timeout");
     #endif
@@ -1013,50 +1163,29 @@ void setup() {
     delay(5000);
   }
 
+  //Get custom device name and set wifi and OTA host name, mqttclient and 
+  if (shouldSaveConfig) {
+    strcpy(device_name, custom_dev_id.getValue());
+  }
+  deviceName = String(device_name);
+  //Use device name to define host names and mqttclient name
+  wifiHostName = deviceName;
+  otaHostName = deviceName + "OTA";
+  mqttClient = deviceName;
+
   //if you get here you have connected to the WiFi
   WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.hostname(WIFIHOSTNAME);
+  WiFi.hostname(wifiHostName.c_str());
   #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
     Serial.println("connected to your wifi...yay!");
   #endif
-  //read updated parameters
-  strcpy(led_count, custom_led_num.getValue());
-
-  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-    Serial.println("The values in the file are: ");
-    Serial.println("\tled_count : " + String(led_count));
-  #endif
-  //save the custom parameters to FS
+  //If callback was excuted, flag was set to save parameters
   if (shouldSaveConfig) {
-    #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-      Serial.println("saving config");
-    #endif
-#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
-    DynamicJsonDocument json(1024);
-#else
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
-#endif
-    json["led_count"] = led_count;
-    json["led_effect"] = "Out-In";
-
-    File configFile = SPIFFS.open("/config.json", "w");
-    if (!configFile) {
-      #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-        Serial.println("failed to open config file for writing");
-      #endif
-    }
-
-#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
-    serializeJson(json, Serial);
-    serializeJson(json, configFile);
-#else
-    json.printTo(Serial);
-    json.printTo(configFile);
-#endif
-    configFile.close();
-    //end save
+    updateBootSettings(false);  //don't reboot
+    delay(1000);
+    readConfigFile();  //Load settings
   }
+
   #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
     Serial.println("local ip");
     Serial.println(WiFi.localIP());
@@ -1081,6 +1210,7 @@ void setup() {
   } else {
     showStandbyLEDs = true;
   }
+  uomDistance = (String(uom_distance)).toInt();
   wakeDistance = (String(wake_mils)).toInt();
   startDistance = (String(start_mils)).toInt();
   parkDistance = (String(park_mils)).toInt();
@@ -1108,19 +1238,10 @@ void setup() {
     mqttTelePeriod = (String(mqtt_tele_period)).toInt();
     mqttUser = String(mqtt_user);
     mqttPW = String(mqtt_pw);
+    mqttTopicSub = String(mqtt_topic_sub);
+    mqttTopicPub = String(mqtt_topic_pub);
     mqttEnabled = true;
   }
-
-  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-     int a = atoi(color_wake);
-     Serial.println("Local values loaded:");
-     Serial.print("NumLEDs: ");
-     Serial.println(numLEDs);
-     Serial.print("Color Wake: ");
-     Serial.print(color_wake);
-     Serial.print(" (");
-     Serial.println(WebColors[6]);
-  #endif   
 
   //------------------------------
   // Setup handlers for web calls
@@ -1166,7 +1287,7 @@ void setup() {
   //-----------------------------
   // Setup OTA Updates
   //-----------------------------
-  ArduinoOTA.setHostname(OTA_HOSTNAME);
+  ArduinoOTA.setHostname(otaHostName.c_str());
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
@@ -1214,7 +1335,8 @@ void setup() {
 
   // Set interval distance based on current Effect
   intervalDistance = calculateInterval();
-}
+ }
+
 
 // =============================
 //   MAIN LOOP
@@ -1348,12 +1470,16 @@ void loop() {
       if (tf_dist > 4999) {
         measureDistance = tf_dist * 1.0 ;
       } else {
-        measureDistance = tf_dist / 25.4;
+        if (uomDistance) {
+          measureDistance = tf_dist;
+        } else {
+          measureDistance = tf_dist / 25.4;
+        }
       }
       sprintf(outMsg, "%1u",carStatus);
-      client.publish(MQTT_TOPIC_PUB"/cardetected", outMsg, true);
+      client.publish(("stat/" + mqttTopicPub + "/cardetected").c_str(), outMsg, true);
       sprintf(outMsg, "%2.1f", measureDistance);
-      client.publish(MQTT_TOPIC_PUB"/parkdistance", outMsg, true);
+      client.publish(("stat/" + mqttTopicPub + "/parkdistance").c_str(), outMsg, true);
     }
   }
   delay(200);

@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.41 - Support for multiple devices and UOM
- * Last Updated: 12/5/2022
+ * Version: 0.42 - Better support for generic ESP8266 (pin change) / update MQTT output for out of range vs. error code
+ * Last Updated: 12/6/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -25,14 +25,14 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.41(ESP8266)"
+#define VERSION "v0.42(ESP8266)"
 
 // ================================
 //  User Defined values and options
 // ================================
 //  Change default values here. Changing any of these requires a recompile and upload.
 
-#define LED_DATA_PIN D6                     // Pin connected to LED strip DIN
+#define LED_DATA_PIN 12                     // Pin connected to LED strip DIN
 #define WIFIMODE 2                          // 0 = Only Soft Access Point, 1 = Only connect to local WiFi network with UN/PW, 2 = Both
 #define MQTTMODE 1                          // 0 = Disable MQTT, 1 = Enable (will only be enabled if WiFi mode = 1 or 2 - broker must be on same network)
 #define SERIAL_DEBUG 0                      // 0 = Disable (must be disabled if using RX/TX pins), 1 = enable
@@ -1467,15 +1467,23 @@ void loop() {
       byte carStatus = 0;
       float measureDistance = 0;
       if (carDetected) carStatus = 1;
-      if (tf_dist > 4999) {
-        measureDistance = tf_dist * 1.0 ;
-      } else {
+
+      if (tf_dist > 50000) {
+        measureDistance = tf_dist * 1.0 ;  //TFMini returning error code, just output to MQTT for troubleshooting
+      } else if (tf_dist > 5080) {         // Out of range
+        if (uomDistance) {
+          measureDistance = 5080;
+        } else {
+          measureDistance = 200;
+        }
+     } else {
         if (uomDistance) {
           measureDistance = tf_dist;
         } else {
           measureDistance = tf_dist / 25.4;
         }
-      }
+     }
+      
       sprintf(outMsg, "%1u",carStatus);
       client.publish(("stat/" + mqttTopicPub + "/cardetected").c_str(), outMsg, true);
       sprintf(outMsg, "%2.1f", measureDistance);

@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.42 - Better support for generic ESP8266 (pin change) / update MQTT output for out of range vs. error code
- * Last Updated: 12/6/2022
+ * Version: 0.43 - Fix for potential boot loop issue
+ * Last Updated: 12/26/2022
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.42(ESP8266)"
+#define VERSION "v0.43 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -135,7 +135,7 @@ bool coldStart = true;
 byte carDetectedCounter = 0;
 byte carDetectedCounterMax = 3;
 byte nocarDetectedCounter = 0;
-byte nocarDetectedCounterMax = 3;
+byte nocarDetectedCounterMax = 2;
 byte outOfRangeCounter = 0;
 uint32_t startTime;
 bool exitSleepTimerStarted = false;
@@ -1050,31 +1050,31 @@ void readConfigFile() {
           #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
             Serial.println("\nparsed json");
           #endif
-          // Read values here from SPIFFS
-          strcpy(led_count, json["led_count"]);
-          strcpy(led_park_time, json["led_park_time"]);
-          strcpy(led_exit_time, json["led_exit_time"]);
-          strcpy(led_brightness_active, json["led_brightness_active"]);
-          strcpy(led_brightness_sleep, json["led_brightness_sleep"]);
+          // Read values here from SPIFFS (v0.42 - add defaults for all values in case they don't exist to avoid potential boot loop)
+          strcpy(led_count, json["led_count"]|"30");
+          strcpy(led_park_time, json["led_park_time"]|"60");
+          strcpy(led_exit_time, json["led_exit_time"]|"5");
+          strcpy(led_brightness_active, json["led_brightness_active"]|"100");
+          strcpy(led_brightness_sleep, json["led_brightness_sleep"]|"5");
           strcpy(uom_distance, json["uom_distance"]|"0");                    // Default needed if upgrading to v0.41, because value won't exist in config
-          strcpy(wake_mils, json["wake_mils"]);
-          strcpy(start_mils, json["start_mils"]);
-          strcpy(park_mils, json["park_mils"]);
-          strcpy(backup_mils, json["backup_mils"]);
-          strcpy(color_standby, json["color_standby"]);
-          strcpy(color_wake, json["color_wake"]);
-          strcpy(color_active, json["color_active"]);
-          strcpy(color_parked, json["color_parked"]);
-          strcpy(color_backup, json["color_backup"]);
+          strcpy(wake_mils, json["wake_mils"]|"3048");
+          strcpy(start_mils, json["start_mils"]|"1829");
+          strcpy(park_mils, json["park_mils"]|"610");
+          strcpy(backup_mils, json["backup_mils"]|"457");
+          strcpy(color_standby, json["color_standby"]|"3");
+          strcpy(color_wake, json["color_wake"]|"2");
+          strcpy(color_active, json["color_active"]|"1");
+          strcpy(color_parked, json["color_parked"]|"0");
+          strcpy(color_backup, json["color_backup"]|"0");
           strcpy(led_effect, json["led_effect"]|"Out-In");
           strcpy(mqtt_addr_1, json["mqtt_addr_1"]|"0");
           strcpy(mqtt_addr_2, json["mqtt_addr_2"]|"0");
           strcpy(mqtt_addr_3, json["mqtt_addr_3"]|"0");
           strcpy(mqtt_addr_4, json["mqtt_addr_4"]|"0");
-          strcpy(mqtt_port, json["mqtt_port"]);
-          strcpy(mqtt_tele_period, json["mqtt_tele_period"]);
-          strcpy(mqtt_user, json["mqtt_user"]);
-          strcpy(mqtt_pw, json["mqtt_pw"]);
+          strcpy(mqtt_port, json["mqtt_port"]|"0");
+          strcpy(mqtt_tele_period, json["mqtt_tele_period"]|"60");
+          strcpy(mqtt_user, json["mqtt_user"]|"mqttuser");
+          strcpy(mqtt_pw, json["mqtt_pw"]|"mqttpwd");
           strcpy(device_name, json["device_name"]|"parkasst");               // Default needed if upgrading to v0.41, because value won't exist in config
           strcpy(mqtt_topic_sub, json["mqtt_topic_sub"]|"parkasst");         // Default needed if upgrading to v0.41, because value won't exist in config
           strcpy(mqtt_topic_pub, json["mqtt_topic_pub"]|"parkasst");         // Default needed if upgrading to v0.41, because value won't exist in config
@@ -1409,6 +1409,7 @@ void loop() {
       }
       carDetected = false;
       carDetectedCounter = 0;
+      nocarDetectedCounter = 0;
     }
   }
 

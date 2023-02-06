@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.43 - Fix for potential boot loop issue
- * Last Updated: 12/26/2022
+ * Version: 0.44 - MQTT Updates/force update on carstatus change
+ * Last Updated: 1/30/2023
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.43 (ESP8266)"
+#define VERSION "v0.44 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -102,6 +102,8 @@ String mqttTopicPub = "parkasst"; //v0.41
 
 bool mqttEnabled = false;         //Will be enabled/disabled depending on whether a valid IP address is defined in Settings (0.0.0.0 disables MQTT)
 bool mqttConnected = false;       //Will be enabled if defined and successful connnection made.  This var should be checked upon any MQTT action.
+bool prevCarStatus = false;       //v0.44 for forcing MQTT update on state change
+bool forceMQTTUpdate = false;     //v0.44 for forcing MQTT update on state change
 
 // ===============================
 //  Effects and Color arrays 
@@ -135,7 +137,7 @@ bool coldStart = true;
 byte carDetectedCounter = 0;
 byte carDetectedCounterMax = 3;
 byte nocarDetectedCounter = 0;
-byte nocarDetectedCounterMax = 2;
+byte nocarDetectedCounterMax = 3;
 byte outOfRangeCounter = 0;
 uint32_t startTime;
 bool exitSleepTimerStarted = false;
@@ -1413,6 +1415,12 @@ void loop() {
     }
   }
 
+  //v0.44 - force MQTT update if car state changes
+  if (carDetected != prevCarStatus) {
+    prevCarStatus = carDetected;
+    forceMQTTUpdate = true;
+  }
+
   //Update LEDs
   if ((carDetected) && (isAwake)) {
     if (tf_dist <= backupDistance) {
@@ -1458,8 +1466,9 @@ void loop() {
 
   //Update MQTT Stats per tele period
   if (mqttEnabled) {
-    if ((currentMillis - mqttLastUpdate) > (mqttTelePeriod * 1000)) {
+    if (((currentMillis - mqttLastUpdate) > (mqttTelePeriod * 1000)) || (forceMQTTUpdate)) {
       mqttLastUpdate = currentMillis;
+      forceMQTTUpdate = false;
       if (!client.connected()) {
         reconnect();
       }

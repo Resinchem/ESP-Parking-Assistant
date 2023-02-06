@@ -3,7 +3,7 @@
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
  * Version: 0.44 - MQTT Updates/force update on carstatus change
- * Last Updated: 1/30/2023
+ * Last Updated: 2/6/2023
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.

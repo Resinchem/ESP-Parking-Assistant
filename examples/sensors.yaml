@@ -1,15 +1,25 @@
 # Create these entries under your existing MQTT integration header,
 # whether that is in your primary configuration.yaml, a split yaml file
 # or in the MQTT section of a package.
-# You can change the name to anything desired and add any other standard
-#  sensor attributes like icon, etc.
+# 
+# Replace the "parkasst" section in the state topics with whatever topic
+# you specified in the MQTT setup portion of the Parking Assistant settings 
+# if different than the default.
+#
+# You can also change the name to anything desired and add any other standard
+# sensor attributes like icon, etc.
 
 mqtt:
-  sensor:
+  binary_sensor:
     - name: "Car Detected"
       state_topic: "stat/parkasst/cardetected"
+      payload_on: "1"
+      payload_off: "0"
+  sensor:
     - name: "Parking Distance"
       state_topic: "stat/parkasst/parkdistance"
       unit_of_measurement: "in"
-  
-  
+    - name: "IP Address"
+      state_topic: "stat/parkasst/ipaddress"
+    - name: "MAC Address"
+      state_topic: "stat/parkasst/macaddress"

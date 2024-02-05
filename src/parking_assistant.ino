@@ -2,8 +2,8 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.44 - MQTT Updates/force update on carstatus change
- * Last Updated: 2/6/2023
+ * Version: 0.45 - Misc. Fixes and Updates
+ * Last Updated: 2/3/2024
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.44 (ESP8266)"
+#define VERSION "v0.45 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -105,6 +105,12 @@ bool mqttConnected = false;       //Will be enabled if defined and successful co
 bool prevCarStatus = false;       //v0.44 for forcing MQTT update on state change
 bool forceMQTTUpdate = false;     //v0.44 for forcing MQTT update on state change
 
+//Variables for creating unique entity IDs and topics (HA discovery)
+byte macAddr[6];               //Device MAC address (array is in reverse order)
+String strMacAddr;             //MAC address as string and in proper order
+char uidPrefix[] = "prkast";   //Prefix for unique ID generation
+char devUniqueID[30];          //Generated Unique ID for this device (uidPrefix + last 6 MAC characters)
+
 // ===============================
 //  Effects and Color arrays 
 // ===============================
@@ -171,8 +177,8 @@ char mqtt_addr_2[4];
 char mqtt_addr_3[4];
 char mqtt_addr_4[4];
 char mqtt_port[6];
-char mqtt_user[31];
-char mqtt_pw[31];
+char mqtt_user[65];
+char mqtt_pw[65];
 char mqtt_tele_period[4];
 char mqtt_topic_sub[18];   //v0.41
 char mqtt_topic_pub[18];   //v0.41
@@ -459,7 +465,7 @@ void handleRoot() {
       <b><u>MQTT Settings</u></b>:<br>\
       ONLY enter this information if you already have an MQTT broker configured. <u><i>To disable or remove MQTT functionality, set the IP address to 0.0.0.0</i></u><br>\
       Any changes to MQTT require that you check the box to update boot settings below, which will reboot the controller.  If a successful connection to your MQTT broker is made, \
-      a retained message of \"connected\" will be published to the topic \"stat/parkasst/mqtt\".<br><br>";
+      a retained message of \"connected\" will be published to the topic \"stat/your_topic/mqtt\".<br><br>";
   mainPage += "<table>\
       <tr>\
       <td><label for=\"mqttaddr1\">Broker IP Address:</label></td>\
@@ -479,12 +485,12 @@ void handleRoot() {
   mainPage += "\"></td></tr>\
       <tr>\
       <td><label for=\"mqttuser\">MQTT User Name:</label></td>\
-      <td><input type=\"text\" name=\"mqttuser\" value=\"";
+      <td><input type=\"text\" name=\"mqttuser\" maxlength=\"64\" value=\"";
   mainPage += mqttUser;
   mainPage += "\"></td></tr>\
       <tr>\
       <td><label for=\"mqttpw\">MQTT Password:</label></td>\
-      <td><input type=\"password\" name=\"mqttpw\" value=\"";
+      <td><input type=\"password\" name=\"mqttpw\" maxlength=\"64\" value=\"";
   mainPage += mqttPW;
   mainPage += "\"></td></tr>\
       <tr>\
@@ -498,6 +504,12 @@ void handleRoot() {
       <td><input type=\"number\" min=\"60\" max=\"600\" step=\"1\" name=\"mqttperiod\" style=\"width: 50px\;\" value=\"";
   mainPage += String(mqttTelePeriod);
   mainPage += "\"> seconds (60 min, 600 max)</td></tr>\
+      <tr>\
+      <td><label for=\"discovery\">MQTT Discovery:</label></td>\
+      <td><a href=\"http://";
+  mainPage += baseIP;
+  mainPage += "/discovery\">Configure Home Assistant MQTT Discovery</a> (beta)";    
+  mainPage += "</td></tr>\
       </table><br>\
       <input type=\"checkbox\" name=\"chksave\" value=\"save\">Save all settings as new boot defaults (controller will reboot)<br><br>\
       <input type=\"submit\" value=\"Update\">\
@@ -761,11 +773,11 @@ void updateBootSettings(bool restart_ESP) {
   char t_mqtt_addr_3[4];
   char t_mqtt_addr_4[4];
   char t_mqtt_port[6];
-  char t_mqtt_user[31];
-  char t_mqtt_pw[31];
+  char t_mqtt_user[65];
+  char t_mqtt_pw[65];
   char t_mqtt_tele_period[4];
-  int user_len = 31;
-  int user_pw = 31;
+  int user_len = 65;
+  int user_pw = 65;
   //v0.41 new values
   char t_device_name[18];
   char t_mqtt_topic_sub[18];
@@ -916,6 +928,204 @@ void handleRestart() {
     ESP.restart();
 }
 
+/* ================================
+    Home Assistant MQTT Discovery - v0.45
+   ================================
+*/
+void handleDiscovery() {
+  //Main page for enabling/disabling Home Assistant MQTT Discovery
+  String discMsg = "<HTML>\
+      </head>\
+        <title>Parking Assistant MQTT Discovery</title>\
+        <style>\
+          body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+        </style>\
+      </head>\
+      <body>\
+      <H1>Home Assistant MQTT Discovery - BETA</H1>\
+      (BETA Note: Tested successfully with Home Assistant Core 2024.1 but will be considered a beta feature until broader testing by others has been completed.)<br><br>\
+      This feature can be used to add or remove the parking assistant device and MQTT entities to Home Assistant without manual YAML editing.<br><br>";  
+  discMsg += "<u><b>Prerequisites and Notes</b></u>";
+  discMsg += "<ul><li>It is <b><i>strongly recommended</i></b> that you read the &nbsp"; 
+  discMsg += "<a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant\" target=\"_blank\" rel=\"noopener noreferrer\">MQTT Documentation</a> before using this feature.</li>";
+  discMsg += "<li>You must have successfully completed the MQTT setup, rebooted and estabished a connection to your broker before these options will work.</li>";
+  discMsg += "<li>The Home Assistant MQTT integration must be installed, discovery must not have been disabled nor the default discovery topic changed.</li>";
+  discMsg += "<li>The action to enable/disable will occur immediately in Home Assistant without any interaction or prompts.</li>";
+  discMsg += "<li>If you have already manually created the Home Assistant MQTT entities, enabling discovery will create duplicate entities with different names.</li></ul>";
+  discMsg += "<H3>Enable Discovery</H3>";
+  discMsg += "This will immediately create a device called <b>VAR_DEVICE_NAME</b> in your Home Assistant MQTT Integration.<br>";
+  discMsg += "It will also create the following entities for this device:\
+      <ul>\
+      <li>Car Presence</li>\
+      <li>Park Distance</li>\
+      <li>IP Address</li>\
+      <li>MAC Address</li></ul><br>";
+  discMsg += "<button id=\"btnenable\" onclick=\"location.href = './discoveryEnabled';\">Enable Discovery</button>"; 
+  discMsg += "<br><hr>";
+  discMsg += "<H3>Disable Discovery</H3>";
+  discMsg += "This will <b>immediately</b> delete the device and all entities created MQTT Discover for this device.<br>\
+      If you have any automations, scripts, dashboard entries or other processes that use these entities, you will need to delete or correct those items in Home Assistant.<br><br>";
+  discMsg += "<button id=\"btndisable\" onclick=\"location.href = './discoveryDisabled';\">Disable Discovery</button><br><br>"; 
+      
+  discMsg += "<br><a href=\"http://";
+  discMsg += baseIP;
+  discMsg += "\">Return to settings</a><br>";
+  discMsg += "</body></html>";
+  discMsg.replace("VAR_DEVICE_NAME", deviceName);
+  server.send(200, "text/html", discMsg); 
+}
+
+void enableDiscovery() {
+  String discMsg = "<HTML>\
+      </head>\
+        <title>Parking Assistant MQTT Discovery</title>\
+        <style>\
+          body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+        </style>\
+      </head>\
+      <body>\
+      <H1>Home Assistant MQTT Discovery</H1><br>";
+  if (mqttEnabled) {
+    byte retVal = haDiscovery(true);
+    if (retVal == 0) {
+
+      discMsg += "<b><p style=\"color: #5a8f3d;\">MQTT Discovery topics successfully sent to Home Assistant.</p></b><br>";
+      discMsg += "If the Home Assistant MQTT integration has been configured correctly, you should now find a new device, <b>VAR_DEVICE_NAME</b>, under the MQTT integration.";
+      discMsg += "<p style=\"color: #1c5410;\">\
+                   <ul>\
+                   <li>You can change the name of the device or any entities, if desired, via Home Assistant</li>\
+                   <li>To remove (permanently delete) the created device and entities, disable MQTT Discovery</li>\
+                   <li>If you disable MQTT Discover and then reenable it, the device and entities will be recreated with their original names.</li>\
+                   </ul></p><br>";
+      discMsg += "If you do not see the new device under your Home Assistant MQTT integration, please use a utility (e.g. MQTT Explorer or similar) to see if the controller is successfully connecting to your broker.<br>\ 
+                  You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>";
+      discMsg += "For additional troubleshooting tips, please see the <a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant\" target=\"_blank\" rel=\"noopener noreferrer\">MQTT Documentation</a><br><br>\
+                  It is recommended that you disable MQTT Discovery in the Parking Assistant app until you resolve any MQTT/Home Assistant issues.<br><br>";
+    
+    } else if (retVal == 1) {
+      //Unable to connect or reconnect to broker
+      discMsg += "<b><p style=\"color: red;\">The Parking Assistant was unable to connect or reconnect to your MQTT broker!</p></b><br>";
+      discMsg += "Please be sure your broker is running and accessible on the same network and that you have completed the following:";
+      discMsg += "<ul>\
+                   <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                   <li>Checked the box to save settings as new boot defaults</li>\
+                   <li>Rebooted the controller</li>\
+                   </ul><br>";
+      discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to test if the controller is successfully connecting to your broker.<br>\ 
+                  You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                  Until you successfully see these topics in your broker, you will not be able to utilize MQTT Discovery.<br><br>";
+      discMsg += "<p style=\"color: red;\">No Home Assistant devices or entities were created.</p><br><br>";
+      
+    } else {
+      //Unknown error or issue
+      discMsg += "<b><p style=\"color: red;\">An unknown error or issue occurred!</p></b><br>";
+      discMsg += "Please be sure your broker is running and accessible on the same network and that you have completed the following:";
+      discMsg += "<ul>\
+                   <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                   <li>Checked the box to save settings as new boot defaults</li>\
+                   <li>Rebooted the controller</li>\
+                   </ul><br>";
+      discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to test if the controller is successfully connecting to your broker.<br>\ 
+                  You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                  Until you successfully see these topics in your broker, you will not be able to utilize MQTT Discovery and may need to manually create the Home Assistant entities.<br><br>";
+      discMsg += "For additional troubleshooting tips, please see the <a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant\" target=\"_blank\" rel=\"noopener noreferrer\">MQTT Documentation</a><br><br>";
+      discMsg += "<p style=\"color: red;\">No Home Assistant devices or entities were created.</p><br><br>";
+    }
+  } else {
+    discMsg += "<b><p style=\"color: red;\">MQTT is not enabled or was unable to connect to your broker!</p></b><br>";
+    discMsg += "Before attempting to enable MQTT Discovery, please be sure you have completed the following:";
+    discMsg += "<ul>\
+                 <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                 <li>Checked the box to save settings as new boot defaults</li>\
+                 <li>Rebooted the controller</li>\
+                 </ul><br>";
+    discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to see if the controller is successfully connecting to your broker.<br>\ 
+                You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                Until you successfully see these topics in your broker, you will not be able to enable MQTT Discovery.<br>";
+    
+  }
+  discMsg += "<br><a href=\"http://";
+  discMsg += baseIP;
+  discMsg += "\">Return to settings</a><br>";
+  discMsg += "</body></html>";
+  discMsg.replace("VAR_DEVICE_NAME", deviceName);
+  server.send(200, "text/html", discMsg); 
+
+}
+
+void disableDiscovery() {
+  String discMsg = "<HTML>\
+      </head>\
+        <title>Parking Assistant MQTT Discovery</title>\
+        <style>\
+          body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+        </style>\
+      </head>\
+      <body>\
+      <H1>Home Assistant MQTT Discovery</H1><br>";
+  if (mqttEnabled) {
+    byte retVal = haDiscovery(false);
+    if (retVal == 0) {
+      discMsg += "<b><p style=\"color: #5a8f3d;\">MQTT Removal topics successfully sent to Home Assistant.</p></b><br>";
+      discMsg += "The device <b>VAR_DEVICE_NAME</b> should now be deleted from Home Assistant, along with the following entities:\
+        <ul>\
+        <li>Car Presence</li>\
+        <li>Park Distance</li>\
+        <li>IP Address</li>\
+        <li>MAC Address</li></ul><br>";
+            
+    } else if (retVal == 1) {
+      //Unable to connect or reconnect to broker
+      discMsg += "<b><p style=\"color: red;\">The Parking Assistant was unable to connect or reconnect to your MQTT broker!</p></b><br>";
+      discMsg += "Please be sure your broker is running and accessible on the same network and that you have completed the following:";
+      discMsg += "<ul>\
+                   <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                   <li>Checked the box to save settings as new boot defaults</li>\
+                   <li>Rebooted the controller</li>\
+                   </ul><br>";
+      discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to test if the controller is successfully connecting to your broker.<br>\ 
+                  You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                  Until you successfully see these topics in your broker, you will not be able to utilize MQTT Discovery.<br><br>";
+      discMsg += "<p style=\"color: red;\">No Home Assistant devices or entities were removed.</p><br><br>";
+      
+    } else {
+      //Unknown error or issue
+      discMsg += "<b><p style=\"color: red;\">An unknown error or issue occurred!</p></b><br>";
+      discMsg += "Please be sure your broker is running and accessible on the same network and that you have completed the following:";
+      discMsg += "<ul>\
+                   <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                   <li>Checked the box to save settings as new boot defaults</li>\
+                   <li>Rebooted the controller</li>\
+                   </ul><br>";
+      discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to test if the controller is successfully connecting to your broker.<br>\ 
+                  You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                  Until you successfully see these topics in your broker, you will not be able to utilize MQTT Discovery and may need to manually create the Home Assistant entities.<br><br>";
+      discMsg += "For additional troubleshooting tips, please see the <a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant\" target=\"_blank\" rel=\"noopener noreferrer\">MQTT Documentation</a><br><br>";
+      discMsg += "<p style=\"color: red;\">No Home Assistant devices or entities were removed.</p><br><br>";
+      
+    }
+  } else {
+    discMsg += "<b><p style=\"color: red;\">MQTT is not enabled or was unable to connect to your broker!</p></b><br>";
+    discMsg += "Before attempting to use MQTT Discovery, please be sure you have completed the following:";
+    discMsg += "<ul>\
+                 <li>Entered the proper MQTT broker settings and the correct User Name and Password</li>\
+                 <li>Checked the box to save settings as new boot defaults</li>\
+                 <li>Rebooted the controller</li>\
+                 </ul><br>";
+    discMsg += "Please use a utility (e.g. MQTT Explorer or similar) to see if the controller is successfully connecting to your broker.<br>\ 
+                You should see an MQTT connected message, along with the IP and MAC addresses of your controller under the topic specified on the main settings page.<br><br>\
+                Until you successfully see these topics in your broker, you will not be able to enable MQTT Discovery.<br>";
+    
+  }
+  discMsg += "<br><a href=\"http://";
+  discMsg += baseIP;
+  discMsg += "\">Return to settings</a><br>";
+  discMsg += "</body></html>";
+  discMsg.replace("VAR_DEVICE_NAME", deviceName);
+  server.send(200, "text/html", discMsg); 
+
+}
+
 // Not found or invalid page handler
 void handleNotFound() {
   String message = "File Not Found or invalid command.\n\n";
@@ -938,6 +1148,7 @@ bool setup_mqtt() {
   IPAddress myserver = IPAddress(mqttAddr_1, mqttAddr_2, mqttAddr_3, mqttAddr_4);
   
   client.setServer(myserver, mqttPort);
+  client.setBufferSize(512); 
   client.setCallback(callback);
   #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
     Serial.print("Connecting to MQTT broker.");
@@ -964,6 +1175,9 @@ bool setup_mqtt() {
   #endif
   client.subscribe(("cmnd/" + mqttTopicSub + "/#").c_str());
   client.publish(("stat/" + mqttTopicPub + "/mqtt").c_str(), "connected", true);
+  //Publish current IP and MAC addresses
+  client.publish(("stat/" + mqttTopicPub + "/ipaddress").c_str(), baseIP.c_str(), true);
+  client.publish(("stat/" + mqttTopicPub + "/macaddress").c_str(), strMacAddr.c_str(), true);
   mqttConnected = true;
   return true;
 }
@@ -999,6 +1213,44 @@ void reconnect() {
     if ((retries > 149) && (mqttEnabled))
     {
     ESP.restart();
+    }
+  }
+}
+
+bool reconnect_soft() {
+  //Attempt MQTT reconnect.  If fails, return false instead of forcing ESP Reboot
+  int retries = 0;
+  while (!client.connected()) {
+    if(retries < 10)
+    {
+      #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+        Serial.print("Attempting MQTT connection...");
+      #endif
+      if (client.connect(mqttClient.c_str(), mqttUser.c_str(), mqttPW.c_str())) 
+      {
+        #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+          Serial.println("connected");
+        #endif
+        // ... and resubscribe
+        client.subscribe(("cmnd/" + mqttTopicSub + "/#").c_str());
+        return true;
+      } 
+      else 
+      {
+        #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+          Serial.print("failed, rc=");
+          Serial.print(client.state());
+          Serial.println(" try again in 5 seconds");
+        #endif
+        retries++;
+        // Wait 3 seconds before retrying
+        delay(3000);
+        yield();
+      }
+    } 
+    if ((retries > 9) && (mqttEnabled)) 
+    {
+       return false;
     }
   }
 }
@@ -1112,6 +1364,9 @@ void setup() {
   defineEffects();
   defineColors();
 
+  // Default Wifi to station mode - fixes issue #16
+  // Local AP will be handed by WifiManager for onboarding
+  WiFi.mode(WIFI_STA);
   // -----------------------------------------
   //  Captive Portal and Wifi Onboarding Setup
   // -----------------------------------------
@@ -1193,6 +1448,8 @@ void setup() {
     Serial.println(WiFi.localIP());
   #endif
   baseIP = WiFi.localIP().toString();
+  WiFi.macAddress(macAddr);         //Array for Unique ID gen
+  strMacAddr = WiFi.macAddress();   //String for MQTT
   // ----------------------------
 
   //Convert config values to local values
@@ -1259,6 +1516,12 @@ void setup() {
   server.on("/restart", handleRestart);
 
   server.on("/reset", handleReset);
+
+  server.on("/discovery", handleDiscovery);
+
+  server.on("/discoveryEnabled", enableDiscovery);
+
+  server.on("/discoveryDisabled", disableDiscovery);
 
   server.on("/otaupdate",[]() {
     //Called directly from browser address (//ip_address/otaupdate) to put controller in ota mode for uploadling from Arduino IDE
@@ -1619,3 +1882,176 @@ void updateOTA() {
 // ==============================
 //  MQTT Functions and Procedures
 // ==============================
+void createUniqueId() {
+  // Get Unique ID as uidPrefix + last 6 MAC digits
+
+  strcpy(devUniqueID, uidPrefix);
+  int preSizeBytes = sizeof(uidPrefix);
+  int preSizeElements = (sizeof(uidPrefix) / sizeof(uidPrefix[0]));
+  //Now add last 6 chars from MAC address (these are 'reversed' in the array)
+  int j = 0;
+  //for (int i = 2; i >= 0; i--) {
+  for (int i = 3; i < 6; i++) {
+    sprintf(&devUniqueID[(preSizeBytes - 1) + (j)], "%02X", macAddr[i]);   //preSizeBytes indicates num of bytes in prefix - null terminator, plus 2 (j) bytes for each hex segment of MAC
+    j = j + 2;
+  }
+  //devUniqueID would now contain something like "prkast02BE4F" which can be used for topics/payloads
+  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+    Serial.print("UNIQUE ID CREATED: ");
+    Serial.println(devUniqueID);
+  #endif
+}
+
+
+byte haDiscovery (bool enable) {
+  char topic[128];
+  char buffer1[512];
+  char buffer2[512];
+  char buffer3[512];
+  char buffer4[512];
+  char uid[128];
+  if (mqttEnabled) {
+    createUniqueId();
+    if (enable) {    
+      //Add device and entities
+      if (!client.connected()) { 
+        if (!reconnect_soft()) {
+          return 1;
+        }
+      }
+      //Should have valid MQTT Connection at this point
+      DynamicJsonDocument doc(512);
+      
+      //Create primary car presence binary sensor with full device details
+      //topic
+      strcpy(topic, "homeassistant/binary_sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "P/config");
+      //Unique ID
+      strcpy(uid, devUniqueID);
+      strcat(uid, "P");
+      //JSON Payload
+      doc.clear();
+      doc["name"] = "Car presence";
+      doc["uniq_id"] = uid;
+      doc["deve_cla"] = "occupancy";
+      doc["stat_t"] = "stat/" + mqttTopicPub + "/cardetected";
+      doc["pl_on"] = "1";
+      doc["pl_off"] = "0";
+      JsonObject deviceP = doc.createNestedObject("device");
+        deviceP["ids"] = deviceName + devUniqueID;
+        deviceP["name"] = deviceName;
+        deviceP["mdl"] = "Parking Assistant";
+        deviceP["mf"] = "Resinchem Tech";
+        deviceP["sw"] = VERSION;
+        deviceP["cu"] = "http://" + baseIP;
+      serializeJson(doc, buffer1);
+      client.publish(topic, buffer1, true);
+
+      //Create Parked Distance sensor
+      //topic
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "D/config");
+      //Unique ID
+      strcpy(uid, devUniqueID);
+      strcat(uid, "D");
+      //JSON Payload
+      doc.clear();
+      doc["name"] = "Park distance";
+      doc["uniq_id"] = uid;
+      doc["deve_cla"] = "distance";
+      doc["stat_t"] = "stat/" + mqttTopicPub + "/parkdistance";
+      if (uomDistance) {
+        doc["unit_of_meas"] = "mm";
+      } else {
+        doc["unit_of_meas"] = "in";
+      }
+      JsonObject deviceD = doc.createNestedObject("device");
+        deviceD["ids"] = deviceName + devUniqueID;
+        deviceD["name"] = deviceName;
+      serializeJson(doc, buffer2);
+      client.publish(topic, buffer2, true);
+       
+      //Create IP Address as Diagnostic Sensor
+      //topic
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "I/config");
+      //Unique ID
+      strcpy(uid, devUniqueID);
+      strcat(uid, "I");
+      //JSON Payload
+      doc.clear();
+      doc["name"] = deviceName + " IP address";
+      doc["uniq_id"] = uid;
+      doc["ent_cat"] = "diagnostic";
+      doc["stat_t"] = "stat/" + mqttTopicPub + "/ipaddress";
+      JsonObject deviceI = doc.createNestedObject("device");
+        deviceI["ids"] = deviceName + devUniqueID;
+        deviceI["name"] = deviceName;
+      serializeJson(doc, buffer3);
+      client.publish(topic, buffer3, true);
+     
+      //Create MAC Address as Diagnostic Sensor
+      //topic
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "M/config");
+      //Unique ID
+      strcpy(uid, devUniqueID);
+      strcat(uid, "M");
+      //JSON Payload
+      doc.clear();
+      doc["name"] = deviceName + " MAC address";
+      doc["uniq_id"] = uid;
+      doc["ent_cat"] = "diagnostic";
+      doc["stat_t"] = "stat/" + mqttTopicPub + "/macaddress";
+      JsonObject deviceM = doc.createNestedObject("device");
+        deviceM["ids"] = deviceName + devUniqueID;
+        deviceM["name"] = deviceName;
+      serializeJson(doc, buffer4);
+      client.publish(topic, buffer4, true);
+      return 0;
+      
+    } else {
+      //Remove all Discovered Devices/entities  
+      if (!client.connected()) { 
+        if (!reconnect_soft()) {
+          return 1;
+        }
+      }
+      //Publish empty payload (retained false) for each of the topics created above
+      //Car Presence
+      strcpy(topic, "homeassistant/binary_sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "P/config");
+      client.publish(topic, "");
+
+      //Park Distance
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "D/config");
+      client.publish(topic, "");
+
+     //IP Address
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "I/config");
+      client.publish(topic, "");
+
+     //MAC Address
+      strcpy(topic, "homeassistant/sensor/");
+      strcat(topic, devUniqueID);
+      strcat(topic, "M/config");
+      client.publish(topic, "");
+
+      return 0;
+    }
+  } else {
+    //MQTT not enabled... should never hit this as it is checked before calling  
+    return 90;
+  }
+  //catch all
+  return 99;
+}

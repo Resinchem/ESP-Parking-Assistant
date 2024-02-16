@@ -2,30 +2,30 @@
  * ESP8266 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 controller for WS2812b LED strips
- * Version: 0.45 - Misc. Fixes and Updates
- * Last Updated: 2/3/2024
+ * Version: 0.46 - Misc. Fixes and Updates (see release notes)
+ * Last Updated: 2/16/2024
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
  */
-#include <FS.h>                   
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager (must be v2.0.8-beta or later)
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#include <ESP8266WebServer.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>           //https://github.com/jandrassy/ArduinoOTA
-#include <FastLED.h>
-#include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
-#include <WiFiClient.h>
-#include <ESP8266HTTPUpdateServer.h>
-#include <TFMPlus.h>               //https://github.com/budryerson/TFMini-Plus
-#include <PubSubClient.h>
+#include <FS.h>                         //Arduino ESP8266 Core - Handles filesystem functions (read/write config file)
+#include <WiFiManager.h>                //https://github.com/tzapu/WiFiManager (must be v2.0.8-beta or later) - Wifi Onboarding with Portal
+#include <ESP8266WiFi.h>                //Arudino ESP8266 Core - standard wifi connnectivity
+#include <ESP8266mDNS.h>                //https://github.com/mrdunk/esp8266_mdns - Provides mDNS queries and responses (needed for OTA updates)
+#include <ESP8266WebServer.h>           //Arduino ESP8266 Core - Provides web server functionalities (handles HTTP requests - also needed for OTA updates)
+#include <WiFiUdp.h>                    //Arduino ESP core - provides UDP
+#include <ArduinoOTA.h>                 //https://github.com/jandrassy/ArduinoOTA
+#include <FastLED.h>                    //https://github.com/FastLED/FastLED - LED functionality
+#include <ArduinoJson.h>                //https://github.com/bblanchon/ArduinoJson
+#include <WiFiClient.h>                 //Arduino ESP8266 Core - creates a client that can connect to an IP address
+#include <ESP8266HTTPUpdateServer.h>    //Arudino ESP8266 Core - needed for OTA Updates
+#include <TFMPlus.h>                    //https://github.com/budryerson/TFMini-Plus
+#include <PubSubClient.h>               //https://github.com/knolleary/pubsubclient  Provides MQTT functions
 
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.45 (ESP8266)"
+#define VERSION "v0.46 (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -143,7 +143,7 @@ bool coldStart = true;
 byte carDetectedCounter = 0;
 byte carDetectedCounterMax = 3;
 byte nocarDetectedCounter = 0;
-byte nocarDetectedCounterMax = 3;
+byte nocarDetectedCounterMax = 10;
 byte outOfRangeCounter = 0;
 uint32_t startTime;
 bool exitSleepTimerStarted = false;
@@ -268,6 +268,7 @@ void handleRoot() {
   }
   String mainPage = "<html>\
   <head>\
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
     <title>Parking Assistant - Main</title>\
     <style>\
       body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -619,6 +620,7 @@ void handleForm() {
     
     String message = "<html>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Parking Assistant - Current Settings</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -701,6 +703,7 @@ void handleForm() {
 void handleUpdate() {
   String updFirmware = "<html>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Parking Assistant - Firmware Update</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -853,26 +856,22 @@ void updateBootSettings(bool restart_ESP) {
     json["mqtt_topic_sub"] = t_mqtt_topic_sub;
     json["mqtt_topic_pub"] = t_mqtt_topic_pub;
 
-  File configFile = SPIFFS.open("/config.json", "w");
-  if (!configFile) {
-    #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-      Serial.println("failed to open config file for writing");
-    #endif
+    if (SPIFFS.begin()) {
+      File configFile = SPIFFS.open("/config.json", "w");
+      if (!configFile) {
+        #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+          Serial.println("failed to open config file for writing");
+        #endif
+      }
+      serializeJson(json, Serial);
+      serializeJson(json, configFile);
+      configFile.close();
+        //end save
+      #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+        Serial.println("Boot settings saved. Rebooting controller.");
+      #endif
   }
-
-#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
-    serializeJson(json, Serial);
-    serializeJson(json, configFile);
-#else
-    json.printTo(Serial);
-    json.printTo(configFile);
-#endif
-    configFile.close();
-    //end save
-  #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
-    Serial.println("Boot settings saved. Rebooting controller.");
-  #endif
-  
+  SPIFFS.end();
   if (restart_ESP) {   //Needed so initial onboarding doesn't cause second reboot
     ESP.restart();
   }
@@ -881,6 +880,7 @@ void updateBootSettings(bool restart_ESP) {
 void handleReset() {
     String resetMsg = "<HTML>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Controller Reset</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -901,7 +901,9 @@ void handleReset() {
       </body></html>";
     server.send(200, "text/html", resetMsg);
     delay(1000);
+    SPIFFS.begin();
     SPIFFS.format();
+    SPIFFS.end();
     wifiManager.resetSettings();
     delay(1000);
     ESP.restart();
@@ -910,6 +912,7 @@ void handleReset() {
 void handleRestart() {
     String restartMsg = "<HTML>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Controller Restart</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -936,6 +939,7 @@ void handleDiscovery() {
   //Main page for enabling/disabling Home Assistant MQTT Discovery
   String discMsg = "<HTML>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Parking Assistant MQTT Discovery</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -978,6 +982,7 @@ void handleDiscovery() {
 void enableDiscovery() {
   String discMsg = "<HTML>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Parking Assistant MQTT Discovery</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -1056,6 +1061,7 @@ void enableDiscovery() {
 void disableDiscovery() {
   String discMsg = "<HTML>\
       </head>\
+        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\
         <title>Parking Assistant MQTT Discovery</title>\
         <style>\
           body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -1290,18 +1296,11 @@ void readConfigFile() {
 
         configFile.readBytes(buf.get(), size);
 
-#ifdef ARDUINOJSON_VERSION_MAJOR >= 6
         DynamicJsonDocument json(1024);
         auto deserializeError = deserializeJson(json, buf.get());
         serializeJson(json, Serial);
         if ( ! deserializeError ) {
-#else
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& json = jsonBuffer.parseObject(buf.get());
-        json.printTo(Serial);
-        if (json.success()) {
-#endif
-          #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
+         #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
             Serial.println("\nparsed json");
           #endif
           // Read values here from SPIFFS (v0.42 - add defaults for all values in case they don't exist to avoid potential boot loop)
@@ -1342,6 +1341,7 @@ void readConfigFile() {
         configFile.close();
       }
     }
+    SPIFFS.end();  
   } else {
     #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
       Serial.println("failed to mount FS");
@@ -1655,6 +1655,7 @@ void loop() {
     }
     if (carDetectedCounter > carDetectedCounterMax) {  //eliminate trigger on noise
       carDetectedCounter = 0;
+      nocarDetectedCounter = 0;      //new v0.50 - attempt to address bounce
       carDetected = true;
       exitSleepTimerStarted = false;
       parkSleepTimerStarted = true;

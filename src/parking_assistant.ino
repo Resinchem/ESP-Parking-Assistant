@@ -25,7 +25,7 @@
 #ifdef ESP32
   #include <SPIFFS.h>
 #endif
-#define VERSION "v0.46 (ESP8266)"
+#define VERSION "v0.46-gt (ESP8266)"
 
 // ================================
 //  User Defined values and options
@@ -316,7 +316,7 @@ void handleRoot() {
       <b><u>Parking Distances</u></b>:<br>\
       These values, in inches, specify when the LED strip wakes (Wake distance), when the countdown starts (Active distance), when the car is in the desired parked position (Parked distance) or when it has pulled too far forward and should back up (Backup distance).<br><br>\
       See the <a href=\"https://github.com/Resinchem/ESP-Parking-Assistant/wiki/04-Using-the-Web-Interface\">Github wiki</a> for more information on setting these values for your situation. \
-      If using inches, you may enter decimal values (e.g. 27.5\") and these will be converted to millimeters in the code.  Values should decrease from Wake through Backup... maximum value is 192 inches (4980 mm) and minimum value is 12 inches (305 mm).<br><br>\
+      If using inches, you may enter decimal values (e.g. 27.5\") and these will be converted to millimeters in the code.  Values should decrease from Wake through Backup... maximum value is 192 inches (4980 mm) and minimum value is 6 inches (152 mm).<br><br>\
       <table>\
       <tr>\
       <td>Show distances in:</td>\
@@ -339,11 +339,11 @@ void handleRoot() {
       <td><label for=\"wakedistance\">Wake Distance:</label></td>";
 
   if (uomDistance) {
-    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"wakedistance\" value=\"";   
+    mainPage += "<td><input type=\"number\" min=\"152\" max=\"4980\" step=\"1\" name=\"wakedistance\" value=\"";   
     mainPage += String(intWakeDistance); 
     mainPage += "\"> mm</td>";
   } else {
-    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"wakedistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"6\" max=\"192\" step=\"0.1\" name=\"wakedistance\" value=\"";
     mainPage += String(intWakeDistance); 
     mainPage += "\"> inches</td>";
   }
@@ -352,11 +352,11 @@ void handleRoot() {
       <tr>\
       <td><label for=\"activedistance\">Active Distance:</label></td>";
   if (uomDistance) {
-    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"activedistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"152\" max=\"4980\" step=\"1\" name=\"activedistance\" value=\"";
     mainPage += String(intStartDistance);     
     mainPage += "\"> mm</td>";
   } else {
-    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"activedistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"6\" max=\"192\" step=\"0.1\" name=\"activedistance\" value=\"";
     mainPage += String(intStartDistance);     
     mainPage += "\"> inches</td>";
   }
@@ -365,11 +365,11 @@ void handleRoot() {
       <tr>\
       <td><label for=\"parkeddistance\">Parked Distance:</label></td>";
   if (uomDistance) {
-    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"parkeddistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"152\" max=\"4980\" step=\"1\" name=\"parkeddistance\" value=\"";
     mainPage += String(intParkDistance);
     mainPage += "\"> mm</td>";
   } else {
-    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"parkeddistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"6\" max=\"192\" step=\"0.1\" name=\"parkeddistance\" value=\"";
     mainPage += String(intParkDistance);
     mainPage += "\"> inches</td>";
   }
@@ -378,11 +378,11 @@ void handleRoot() {
       <tr>\
       <td><label for=\"backupistance\">Backup Distance:</label></td>";
   if (uomDistance) {
-    mainPage += "<td><input type=\"number\" min=\"305\" max=\"4980\" step=\"1\" name=\"backupdistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"152\" max=\"4980\" step=\"1\" name=\"backupdistance\" value=\"";
     mainPage += String(intBackupDistance);
     mainPage += "\"> mm</td>";
   } else {
-    mainPage += "<td><input type=\"number\" min=\"12\" max=\"192\" step=\"0.1\" name=\"backupdistance\" value=\"";
+    mainPage += "<td><input type=\"number\" min=\"6\" max=\"192\" step=\"0.1\" name=\"backupdistance\" value=\"";
     mainPage += String(intBackupDistance);
     mainPage += "\"> inches</td>";
   }
@@ -1259,6 +1259,7 @@ bool reconnect_soft() {
        return false;
     }
   }
+  return false;
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {

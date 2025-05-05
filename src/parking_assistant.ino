@@ -2,7 +2,7 @@
  * ESPx Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 OR ESP32 controller for WS2812b LED strips
- * Last Updated: 3/31/2025
+ * Last Updated: 5/3/2025
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -22,7 +22,7 @@
 #include "html.h"                       //html code for the firmware update page
 
 #ifdef ESP32
-#define VERSION "v0.50 (ESP32)"
+#define VERSION "v0.51 (ESP32)"
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>
@@ -31,7 +31,7 @@
 #define ESP32_RX_PIN 16                 // To TF-Mini TX
 #define ESP32_TX_PIN 17                 // To TF-Mini RX 
 #elif defined(ESP8266)
-#define VERSION "v0.50 (ESP8266)"
+#define VERSION "v0.51 (ESP8266)"
 #include <ESP8266WiFi.h>                //Arudino ESP8266 Core - standard wifi connnectivity
 #include <ESP8266WebServer.h>           //Arduino ESP8266 Core - Provides web server functionalities (handles HTTP requests - also needed for OTA updates)
 #include <WiFiUdp.h>                    //Arduino ESP core - provides UDP
@@ -463,7 +463,7 @@ void handleRoot() {
   uint16_t intLeftDistance = ((leftDistance / 25.4) + 0.5);
   uint16_t intRightDistance = ((rightDistance / 25.4)+ 0.5);
 
-  //If using centimeters, convert from millimeters
+  //If using millimeters
   if (uomDistance) {
     intWakeDistance = wakeDistance;
     intStartDistance = startDistance;
@@ -472,6 +472,7 @@ void handleRoot() {
     intLeftDistance = leftDistance;
     intRightDistance = rightDistance;
   }
+
   String mainPage = "<html><head>";
   mainPage += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
   if (onboarding) {
@@ -906,9 +907,16 @@ void handleForm() {
     } else {
       sideSensorPos = 0;
     }
-    
+
+    wakeDistance = server.arg("wakedistance").toInt();
+    startDistance = server.arg("activedistance").toInt();
+    parkDistance = server.arg("parkeddistance").toInt();
+    backupDistance = server.arg("backupdistance").toInt();
+
+    //Check for UOM change
     byte tmpUOM = server.arg("uom").toInt();
     if (tmpUOM != uomDistance) {
+      uomDistance = tmpUOM;
       //UOM has changed. Convert distances
       if (tmpUOM) {
         //Was inches... convert to mm
@@ -924,7 +932,7 @@ void handleForm() {
           rightDistance = 0;
         #endif
       } else {
-        //Was mm... just get server val
+        //Was mm... just get values (already in mm)
         wakeDistance = (server.arg("wakedistance").toInt());
         startDistance = (server.arg("activedistance").toInt());
         parkDistance = (server.arg("parkeddistance").toInt());
@@ -966,45 +974,32 @@ void handleForm() {
         #endif
        }
     }
-
-    //Validate and adjust any converted to values to fall within min/max values
-    if (uomDistance) {
-      if (wakeDistance < 12) wakeDistance = 12;
-      if (wakeDistance > 192) wakeDistance = 192;
-      if (startDistance < 12) startDistance = 12;
-      if (startDistance > 192) startDistance = 192;
-      if (parkDistance < 12) parkDistance = 12;
-      if (parkDistance > 192) parkDistance = 192;
-      if (backupDistance < 12) backupDistance = 12;
-      if (backupDistance > 192) backupDistance = 192;
-      if ((useSideSensor) && (leftDistance > 0)) {
-        if (leftDistance < 2) leftDistance = 2;
-        if (leftDistance > 36) leftDistance = 36;
-      }
-      if ((useSideSensor) && (leftDistance > 0)) {
-        if (rightDistance < 2) rightDistance = 2;
-        if (rightDistance > 48) rightDistance = 48;
-      }
-    } else {
-      if (wakeDistance < 305) wakeDistance = 305;
-      if (wakeDistance > 4980) wakeDistance = 4980;
-      if (startDistance < 305) startDistance =305;
-      if (startDistance > 4980) startDistance = 4980;
-      if (parkDistance < 305) parkDistance = 305;
-      if (parkDistance > 4980) parkDistance = 4980;
-      if (backupDistance < 305) backupDistance = 305;
-      if (backupDistance > 4980) backupDistance = 4980;
-      if ((useSideSensor) && (leftDistance > 0)) {
-        if (leftDistance < 50) leftDistance = 50;
-        if (leftDistance > 915) leftDistance = 915;
-      }
-      if ((useSideSensor) && (leftDistance > 0)) {
-        if (rightDistance < 50) rightDistance = 50;
-        if (rightDistance > 1220) rightDistance = 1220;
-      }
+    //Validate all distances in valid range after conversion
+    if (wakeDistance < 305) wakeDistance = 305;
+    if (wakeDistance > 4980) wakeDistance = 4980;
+    if (startDistance < 305) startDistance =305;
+    if (startDistance > 4980) startDistance = 4980;
+    if (parkDistance < 305) parkDistance = 305;
+    if (parkDistance > 4980) parkDistance = 4980;
+    if (backupDistance < 305) backupDistance = 305;
+    if (backupDistance > 4980) backupDistance = 4980;
+    if ((useSideSensor) && (leftDistance > 0)) {
+      if (leftDistance < 50) leftDistance = 50;
+      if (leftDistance > 1220) leftDistance = 1220;
     }
-    
-    uomDistance = server.arg("uom").toInt();
+    if ((useSideSensor) && (rightDistance > 0)) {
+      if (rightDistance < 50) rightDistance = 50;
+      if (rightDistance > 1220) rightDistance = 1220;
+    }    
+
+    //To avoid issues, assure increasing distances
+    if ((backupDistance >= parkDistance) || (parkDistance >= startDistance) || (startDistance >= wakeDistance)) {
+       backupDistance = 305;
+       parkDistance = 600;
+       startDistance = 1800;
+       wakeDistance = 3000;
+    }
+
     //for displaying inches on page
     uint16_t intWakeDistance = ((wakeDistance / 25.4) + 0.5);
     uint16_t intStartDistance = ((startDistance / 25.4) + 0.5);
@@ -1063,7 +1058,7 @@ void handleForm() {
     message += "Park Time: " + server.arg("ledparktime") + " secs.<br>";
     message += "Exit Time: " + server.arg("ledexittime") + " secs.<br><br>";
     if (uomDistance) {
-      message += "<b>Parking Distances milimeters (inches)</b><br><br>";
+      message += "<b>Parking Distances millimeters (inches)</b><br><br>";
       message += "Wake Distance: " + String(wakeDistance) + " (" + String(intWakeDistance) + ")<br>";
       message += "Active Distance: " + String(startDistance) + " (" + String(intStartDistance) + ")<br>";
       message += "Parked Distance: " + String(parkDistance) + " (" + String(intParkDistance) + ")<br>";

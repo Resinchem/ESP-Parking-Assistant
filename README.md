@@ -24,3 +24,8 @@ Some key features of the system include:
 **Update**: For information regarding the v0.50 update, including ESP32 support and the addition of lateral guidance via a secondary sensor, watch this [YouTube Video Update](https://youtu.be/Eps6QCgKzaM ) (the update video only covers the new features and not the full build).
 
 Full step-by-step build instructions, including parts lists, wiring diagrams and more can be found in my blog article: [A New Parking Assistant using an ESP8266/ESP32 and WS2812b LEDs](https://resinchemtech.blogspot.com/2022/11/esp-parking-assistant.html)
+
+It takes substantial time, effort and cost to develop and maintain this repository. If you find it helpful and would like to say 'thanks', please consider supporting this project and future development:
+
+<a href="https://www.buymeacoffee.com/resinchemtech" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+

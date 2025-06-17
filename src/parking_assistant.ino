@@ -1215,6 +1215,7 @@ void handleOnboard() {
 #endif
   WiFi.mode(WIFI_STA);
   WiFi.hostname(wifiHostName);
+  WiFi.persistent(true);
   WiFi.begin(wifiSSID, wifiPW);
 #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
   Serial.print("SSID:");

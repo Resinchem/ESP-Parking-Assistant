@@ -93,3 +93,76 @@ const char *otaHtml = R"literal(
   After upload/reboot is complete, you may <a href='./'>Return to Main Settings</a>
   </body></html>
 )literal";
+
+const char *calibrateSensors = R"literal(
+  <!DOCTYPE html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #0000ff; }
+      table, td, th { border: 1px solid black; text-align: center; font-size:150%; }
+    </style>
+  </head>
+  <body>
+  <H1>Sensor Calibration</H1>
+  Use this page for determining optimal sensor distances.  Note that during calibration:
+  <ul>
+    <li> Sensor distance(s) will be updated once per second</li>
+    <li> Values of <b>9999/999</b> means that measurement is out-of-range (no object detected)</li>
+    <li> <b>Err</b> means that no reading was received</li>
+    <li> <b>N/A</b> for the side sensor means it is not available or enabled</li>
+    <li> No values or settings are saved during calibration</li>
+    <li> <i>LED Display may be delayed/unreliable during calibration</i></li>    
+  </ul>
+  <H3><i>Close this page when finished to return system to normal operation!</i></H3>
+  <H2>Front Sensor Distance</H2>
+  <table border='0'>
+    <tr>
+    <td>Millimeters</td><td>&nbsp;&nbsp;</td><td>Inches</td>
+    </tr><tr>
+    <td><p id='frontmm'>0</p></td>
+    <td>&nbsp;</td>
+    <td><p id='frontin'>0</p></td>
+    </tr></table>
+  <br>
+  <H2>Side Sensor Distance</H2>
+  <table border='0'>
+    <tr>
+    <td>Millimeters</td><td>&nbsp;&nbsp;</td><td>Inches</td>
+    </tr><tr>
+    <td><p id='sidemm'>0</p></td>
+    <td>&nbsp;</td>
+    <td><p id='sidein'>0</p></td>
+    </tr></table>
+  <br>
+  <a href='./'>Return to Main Settings</a>
+  <script>
+    function updateSensorValues() {
+      fetch('./data')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json(); 
+        })
+        .then(data => {
+            // Update the content of each sensor value element
+            document.getElementById('frontmm').innerText = data.frontmm;
+            document.getElementById('frontin').innerText = data.frontin;
+            document.getElementById('sidemm').innerText = data.sidemm;
+            document.getElementById('sidein').innerText = data.sidein;
+
+        })
+        .catch(error => {
+            console.error('Error fetching sensor data:', error);
+            document.getElementById('frontmm').innerText = 'Err';
+            document.getElementById('frontin').innerText = 'Err';
+            document.getElementById('sidemm').innerText = 'Err';
+            document.getElementById('sidein').innerText = 'Err';
+        });
+    }
+    document.addEventListener('DOMContentLoaded', updateSensorValues);
+    setInterval(updateSensorValues, 1000);
+  </script>  
+  </body></html>
+)literal";

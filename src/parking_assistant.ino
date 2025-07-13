@@ -2,7 +2,7 @@
  * ESPx Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP8266 OR ESP32 controller for WS2812b LED strips
- * Last Updated: 5/3/2025
+ * Last Updated: 7/12/2025
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -19,10 +19,11 @@
 #include <ArduinoJson.h>                //https://github.com/bblanchon/ArduinoJson (v7.3.1)
 #define FASTLED_INTERNAL                //Suppress FastLED SPI/bitbanged compiler warnings (only applies after first compile)
 #include <FastLED.h>                    //https://github.com/FastLED/FastLED - LED functionality (v3.7.1)
+#include <math.h>
 #include "html.h"                       //html code for the firmware update page
 
 #ifdef ESP32
-#define VERSION "v0.51 (ESP32)"
+#define VERSION "v0.52 (ESP32)"
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>
@@ -31,7 +32,7 @@
 #define ESP32_RX_PIN 16                 // To TF-Mini TX
 #define ESP32_TX_PIN 17                 // To TF-Mini RX 
 #elif defined(ESP8266)
-#define VERSION "v0.51 (ESP8266)"
+#define VERSION "v0.52 (ESP8266)"
 #include <ESP8266WiFi.h>                //Arudino ESP8266 Core - standard wifi connnectivity
 #include <ESP8266WebServer.h>           //Arduino ESP8266 Core - Provides web server functionalities (handles HTTP requests - also needed for OTA updates)
 #include <WiFiUdp.h>                    //Arduino ESP core - provides UDP
@@ -71,6 +72,7 @@ int numLEDs = 30;
 int milliamps = MILLI_AMPS;
 byte activeBrightness = 100;
 byte sleepBrightness = 5;
+bool rightLEDWiring = false;
 uint32_t maxOperationTimePark = 60;
 uint32_t maxOperationTimeExit = 5;
 String ledEffect_m1 = "Out-In";
@@ -293,6 +295,7 @@ void readConfigFile() {
           //DON'T NEED TO STORE OR RECALL WIFI INFO - Written to flash automatically by library when successful connection.
           deviceName = json["device_name"] | "ParkingAsst";
           numLEDs = json["led_count"] | 30;
+          rightLEDWiring = json["right_led_wiring"]|0;
           maxOperationTimePark = json["led_park_time"]|60;
           maxOperationTimeExit = json["led_exit_time"]|5;
           activeBrightness = json["led_brightness_active"]|100;
@@ -381,6 +384,11 @@ void writeConfigFile(bool restart_ESP) {
     #endif
     json["device_name"] = deviceName;
     json["led_count"] = numLEDs;
+    if (rightLEDWiring) {
+      json["right_led_wiring"] = 1;
+    } else {
+      json["right_led_wiring"] = 0;
+    }
     json["led_brightness_active"] = activeBrightness;
     json["led_brightness_sleep"] = sleepBrightness;
     json["led_park_time"] = maxOperationTimePark;
@@ -556,11 +564,28 @@ void handleRoot() {
     mainPage += String(activeBrightness);
     mainPage += "\"></td></tr>\
         <tr>\
-        <td><label for=\"sleepbrightness\">Standby LED Brightness (0-255) - set to zero to disable:</label></td>\
+        <td><label for=\"sleepbrightness\">Standby LED Brightness (0-255):</label></td>\
         <td><input type=\"number\" min=\"0\" max=\"255\" step=\"1\" name=\"sleepbrightness\" value=\"";
     mainPage += String(sleepBrightness);
-    mainPage += "\"></td>\
-        </tr></table><br>\
+    mainPage += "\"> (set to zero to disable)</td>\
+        </tr>\
+        <td>LED Wiring Connection:</td>\
+        <td><input type=\"radio\" id=\"left\" name=\"rightledwiring\" value=\"0\"";
+        if (!rightLEDWiring) {
+          mainPage += " checked=\"checked\">";
+        } else {
+          mainPage += ">";
+        }
+    mainPage += "<label for=\"left\">Left Side</label>&nbsp;&nbsp;\
+        <input type=\"radio\" id=\"right\" name=\"rightledwiring\" value=\"1\"";
+        if (rightLEDWiring) {
+          mainPage += " checked=\"checked\">";
+        } else {
+          mainPage += ">";
+        }
+    mainPage += "<label for=\"right\">Right Side</label>&nbsp;&nbsp;\
+        </td></tr>\
+        </table><br>\
         <b><u>LED Active Times</b></u>:<br>\
         This indicates how long the LEDs remain active when going from a no-car to car-detected (park) state or from a car-detected to no-car (exit)s state.<br><br>\
         <table>\
@@ -577,7 +602,10 @@ void handleRoot() {
     mainPage += "\"></td>\
         </tr>\
         </table><br>\
-        <b><u>Parking Distances</u></b>:<br>\
+        <b><u>Parking Distances</u></b>:<br><br>\
+        <button type=\"button\" id=\"btncalibrate\"\
+         style=\"background-color:#04AA6D\; color:white; border-radius: 12px; font-size: 16px; height: 30px;\"\
+         onclick=\"location.href = './calibrate';\">Calibration Mode</button>&nbsp;- See real time sensor data<br><br>\
         These values, in inches, specify when the LED strip wakes (Wake distance), when the countdown starts (Active distance), when the car is in the desired parked position (Parked distance) or when it has pulled too far forward and should back up (Backup distance).<br><br>\
         If using inches, you may enter decimal values (e.g. 27.5\") and these will be converted to millimeters in the code.  Values should decrease from Wake through Backup... maximum value is 192 inches (4980 mm) and minimum value is 12 inches (305 mm).<br><br>\
         <table>\
@@ -854,20 +882,20 @@ void handleRoot() {
     mainPage += "</td></tr>\
         </table><br>\
         <input type=\"checkbox\" name=\"chksave\" value=\"save\">Save all settings as new boot defaults (controller will reboot)<br><br>\
-        <input type=\"submit\" value=\"Update\">\
+        <input type=\"submit\" style=\"background-color:#aef5f4; border-radius: 10px; font-size: 16px; padding: 6px 28px; \" value=\"Update\">\
       </form>\
       <h2>Controller Commands</h2>\
       Caution: Restart and Reset are executed immediately when the button is clicked.<br>\
       <table border=\"1\" cellpadding=\"10\">\
       <tr>\
-      <td><button id=\"btnrestart\" onclick=\"location.href = './restart';\">Restart</button></td><td>This will reboot controller and reload default boot values.</td>\
+      <td><button id=\"btnrestart\" style=\"border-radius: 6px; font-size: 14px; padding: 6px;\" onclick=\"location.href = './restart';\">Restart</button></td><td>This will reboot controller and reload default boot values.</td>\
       </tr><tr>\
-      <td><button id=\"btnreset\" style=\"background-color:#FAADB7\" onclick=\"location.href = './reset';\">RESET ALL</button></td><td><b>WARNING</b>: This will clear all settings, including WiFi! You must complete initial setup again.</td>\
+      <td><button id=\"btnupdate\" style=\"border-radius: 6px; font-size: 14px; padding: 6px;\" onclick=\"location.href = './webupdate';\">Firmware Upgrade</button></td><td>Upload and apply new firmware (.bin) from local file.</td>\
       </tr><tr>\
-      <td><button id=\"btnupdate\" onclick=\"location.href = './webupdate';\">Firmware Upgrade</button></td><td>Upload and apply new firmware (.bin) from local file.</td>\
+      <td><button type=\"button\" id=\"btnotamode\" style=\"border-radius: 6px; font-size: 14px; padding: 6px;\" onclick=\"location.href = './otaupdate';\">Arudino OTA</button></td>\
+      <td>Put system in Arduino OTA mode for approx. 20 seconds to flash modified firmware from IDE.</td>\
       </tr><tr>\
-      <td><button type=\"button\" id=\"btnotamode\" onclick=\"location.href = './otaupdate';\">Arudino OTA</button></td><td>\
-      Put system in Arduino OTA mode for approx. 20 seconds to flash modified firmware from IDE.</td>\
+      <td><button id=\"btnreset\" style=\"background-color:#FAADB7; border-radius: 6px; font-size: 14px; padding: 6px;\" onclick=\"location.href = './reset';\">RESET ALL</button></td><td><b>WARNING</b>: This will clear all settings, including WiFi! You must complete initial setup again.</td>\
       </tr>\
       </table><br>";
   }
@@ -897,6 +925,12 @@ void handleForm() {
       showStandbyLEDs = false;
     } else {
       showStandbyLEDs = true;
+    }
+    byte ledPos = server.arg("rightledwiring").toInt();
+    if (ledPos == 1) {
+      rightLEDWiring = true;
+    } else {
+      rightLEDWiring = false;
     }
     maxOperationTimePark = server.arg("ledparktime").toInt();
     maxOperationTimeExit = server.arg("ledexittime").toInt();
@@ -1053,7 +1087,14 @@ void handleForm() {
     message += "<b>LED Count & Brightness</b><br><br>";
     message += "Num LEDs: " + server.arg("leds") + "<br>";
     message += "Active Brightness: " + server.arg("activebrightness") + "<br>";
-    message += "Standby Brightness: " + server.arg("sleepbrightness") + "<br><br>";
+    message += "Standby Brightness: " + server.arg("sleepbrightness") + "<br>";
+    message += "LED Wiring: ";
+    if (rightLEDWiring) {
+      message += "Right Side";
+    } else {
+      message += "Left Side";
+    }
+    message += "<br><br>";
     message += "<b>LED Active On Times</b><br><br>";
     message += "Park Time: " + server.arg("ledparktime") + " secs.<br>";
     message += "Exit Time: " + server.arg("ledexittime") + " secs.<br><br>";
@@ -1613,7 +1654,14 @@ void setupWebHandlers() {
       handleWebUpdate();
     }
   );
-   
+  //Special calibration page
+  server.on("/calibrate",[]() {
+    String page = String(calibrateSensors);
+    //page.replace("IPADDRESS", baseIP);
+    server.send(200, "text/html", page);
+  }); 
+  server.on("/data", getCalibrationData);
+
   server.on("/otaupdate",[]() {
     //Called directly from browser address (//ip_address/otaupdate) to put controller in ota mode for uploadling from Arduino IDE
     String page = String(otaHtml);       //from html.h
@@ -1630,6 +1678,50 @@ void setupWebHandlers() {
   #endif
 }
 
+// =============================
+// Function for Calibration Page
+// =============================
+void getCalibrationData() {
+  int16_t frontDistRaw = 0;
+  int16_t frontDistMM = 0;
+  int16_t frontDistIN = 0;
+  int16_t sideDistMM = 0;
+  int16_t sideDistIN = 0;
+  if (tfmini.getData(frontDistRaw)) {
+    frontDistMM = frontDistRaw * 10;
+    float frontDistInTrue = (frontDistMM / 25.4);
+    frontDistIN = round(frontDistInTrue);
+  } else {
+    frontDistMM = 9999;
+    frontDistIN = 999;
+  }
+  StaticJsonDocument<128> doc;
+  doc["frontmm"] = frontDistMM;
+  doc["frontin"] = frontDistIN;
+  #ifdef ESP32
+    if (useSideSensor) {
+      sideDistMM = side_sensor.readRangeSingleMillimeters();
+      if ((sideDistMM > 0) && (sideDistMM < 1300)) {
+        float sideDistInTrue = (sideDistMM / 25.4);
+        sideDistIN = round(sideDistInTrue);
+      } else {
+        sideDistMM = 9999;
+        sideDistIN = 999;
+      }
+      doc["sidemm"] = sideDistMM;
+      doc["sidein"] = sideDistIN;
+    } else {
+      doc["sidemm"] = "N/A";
+      doc["sidein"] = "N/A";
+    }
+  #else
+      doc["sidemm"] = "N/A";
+      doc["sidein"] = "N/A";
+  #endif
+  String jsonString;
+  serializeJson(doc, jsonString);
+  server.send(200, "application/json", jsonString);
+}
 // ===================================
 //  SETUP MQTT AND CALLBACKS
 // ===================================
@@ -2077,13 +2169,13 @@ void loop() {
       //Check side sensor
       if (useSideSensor) {
         if ((vl_side_dist > 0) && (vl_side_dist < 1300)) {
-          if ((sideSensorPos == 1) && (rightDistance > leftDistance)) {   //Left side
+          if ((sideSensorPos == 1) && (rightDistance > leftDistance)) {   //Left side sensor
             if (vl_side_dist > rightDistance) {
               blinkSideLEDs(ledColorBackup, 1);
             } else if (vl_side_dist < leftDistance) {
               blinkSideLEDs(ledColorBackup, 2);
             }
-          } else if ((sideSensorPos == 2) && (rightDistance < leftDistance)) {
+          } else if ((sideSensorPos == 2) && (rightDistance < leftDistance)) {  //Right side sensor
             if (vl_side_dist < rightDistance) {
               blinkSideLEDs(ledColorBackup, 1);
             } else if (vl_side_dist > leftDistance) {
@@ -2194,10 +2286,18 @@ void blinkLEDs(CRGB color) {
 void blinkSideLEDs(CRGB color, byte pos) {
   int startLED = 0;
   int numToLight = (numLEDs * 0.15);
-  if (pos == 1) {
+  if (pos == 1) {         //End of strip
+    if (rightLEDWiring) {       //0.52 fix for reversed LED wiring
+      startLED = 0;
+    } else {
       startLED = ((numLEDs) - (numLEDs * 0.15)) + 1;
-  } else if (pos == 2) {
+    }
+  } else if (pos == 2) {  //Start of strip
+    if (rightLEDWiring) {
+      startLED = ((numLEDs) - (numLEDs * 0.15)) + 1;
+    } else {
       startLED = 0; 
+    }
   } 
   if (blinkSideOn) {
     fill_solid(LEDs + startLED, numToLight, color);

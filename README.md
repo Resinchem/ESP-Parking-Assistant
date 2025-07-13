@@ -4,6 +4,10 @@
 
 A simple to build and use garage parking assistant using an ESP8266 or ESP32 and WS2812b LEDs.  Using a low cost Wemos D1 Mini or ESP32 Mini, a short strip of around 20-40 WS2812b LED pixels and TFMini-s LIDAR distance sensor, a visual parking assistant system for putting your car in the same location in the garage each time can easily be created.
 
+### ESP8266 Support Has Ended (v0.52+)
+
+Due to the continued addition (and complexity) of new features, it has unfortunately become necessary to drop support for the ESP8266 beginning with release v0.52.  If you have or wish to use an ESP8266, then you must use firmware v0.51 or earlier.  I've tried to update the wiki and related pages, but if you still see references to the ESP8266 please be aware that this applies to firmware v0.51 or earlier.  Newer features shown in the wiki and discussed elsewhere also may not be available in the older ESP8266 versions.  It is highly recommended to now use an ESP32 for all new builds.
+
 ### Please see the [wiki](https://github.com/Resinchem/ESP-Parking-Assistant/wiki) for full details on installation, configuration, settings and options.
 If you just want to install the firmware for the ESP8266/ESP32, **[download the appropriate .bin file from the Releases page](https://github.com/Resinchem/ESP-Parking-Assistant/releases/latest)**.  You do not need to download anything from the /src folder nor do you need to clone the repository.  Please follow the wiki instructions before asking questions about how to install the software.
 

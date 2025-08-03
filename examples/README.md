@@ -3,7 +3,7 @@ This provides examples of how to setup sensors in Home Assistant to use data pub
 
 **Starting with release v0.45, Home Assistant MQTT Discovery is now available**
 
-MQTT Discover can be launched from within the Parking Assistant web application and it will automatically create a new device and entities in Home Assistant for you, without the need to create any manual YAML or do any other configuration in Home Assistant.  Please see Wiki [MQTT and Home Assistant](https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant) topic for more information.
+MQTT Discover can be launched from within the Parking Assistant web application and it will automatically create a new device and entities in Home Assistant for you, without the need to create any manual YAML or do any other configuration in Home Assistant.  Please see Wiki [MQTT and Home Assistant](https://github.com/Resinchem/ESP-Parking-Assistant/wiki/08-MQTT-and-Home-Assistant) topic for more information.  You must have a properly installed and configured MQTT broker for this feature (the Home Assistant MQTT add-on is OK).
 
 However, if the discovery process does not work for you or you simply wish to completely control how the entities are created in Home Assistant, you can manually create them via YAML. Sample code for creating these entities is provided in the sensors.yaml file above.  You can tweak these to use your own preferred names, add default icons, etc.
 

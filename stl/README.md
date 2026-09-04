@@ -1,11 +1,17 @@
-### 3D Printed Enclosure
-This folder contains the .stl design files for the enclosure shown in the video and I used in my build.  I used printed with PLA and supports are recommended for the ElectroCookie enclosures
+## 3D Printed Parts
+These parts are not required for functionality but simply provided as an option for enclosing or mounting your parts.
 
-- _ElectroCookie Enclosure Tall_: Enclosure for the ElectroCookie/primary controller.  This version is taller to accommodate an ESP mounted on standard pin headers.  Mounting post for the board are designed for M2 screws.
+All parts were printed using PLA.  Supports (_touching build plate_) are recommended for all parts.  Click any of the files above to see a preview of the model.
 
-- _ElectroCookie Enclosure v3 w Tabs_: This is the original enclosure for the ElectroCookie.  Shorter than the 'tall' version, it will accomodate an ESP soldered directly to the ElectroCookie (without pin headers).
+Part | Purpose/Notes
+----|-----
+`Controller Enclosure Easic.stl`|Basic enclosure for the controller.  Deep enough to permit mounting the ESP32 on pin headers.
+`Controller Enclosure with Mount Tabs.stl`|Same controller enclosure, but with mount tabs for anchoring to wall or other surface.
+`QwiicBus Enclosure.stl`|Enclosure and mount for the Qwiicbus I2C extender (if needed)
+`VL53L0X Side Sensor Mount.stl`|Enclosure and mount for the side sensor (if installed)
 
-- _ElectroCookie Lid_: Cover for either one of the enclosures above.
+Alternative, industrious users  improved on my models by designing a different QwiicBus enclosure and even a controller enclosure design that includes the QwiicBus as part of the base controller.  Here is one of these alternate designs:
 
-- _VL53L0X Case_: Case and mount for the optional VL53L0X side sensor.
+Credit to _**@pjschaffer**_
 
+[Alternate Controller Enclosure with embedded QwiicBus](https://makerworld.com/en/models/3241403-resinchem-tech-s-parking-assistant-enclosure)

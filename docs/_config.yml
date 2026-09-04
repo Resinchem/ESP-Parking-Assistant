@@ -1,0 +1,55 @@
+# Site info
+title: ESP Parking Assistant
+description: Documentation for the ESP32 Parking Assistant Project
+remote_theme: just-the-docs/just-the-docs
+
+# Enable Remote Theme Plugin for Local Server
+plugins:
+  - jekyll-remote-theme
+
+# Theme Settings
+color_scheme: dark
+nav_fold: true
+search_enabled: true
+search:
+  rel_url: true
+
+# Callout definitions (Note, Warning, Important)
+callouts:
+  note:
+    title: ""
+    color: blue
+  warning:
+    title: ""
+    color: red
+  important:
+    title: ""
+    color: yellow
+
+# Global Project Links
+links:
+  youtube_video: "https://youtu.be/pNj6GjKsijo"
+  blog_guide:  "https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html"
+  main_repo: "https://github.com/Resinchem/ESP-Parking-Assistant"
+  
+substitutions:
+  youtube_title: ESP32 Parking Assistant Overhaul
+  blog_title: Complete v0.60 Build Guide
+
+# Navigation & UI Extras
+back_to_top: true
+back_to_top_label: "Back to top"
+
+# External links (header)
+aux_links:
+  "Project Repository":
+    - https://github.com/Resinchem/ESP-Parking-Assistant
+  "YouTube Channel":
+    - https://www.youtube.com/@ResinChemTech
+  "Blog":
+    - https://resinchemtech.blogspot.com/
+
+# Footer
+footer_content: "Copyright © 2026 Resinchem Tech. Firmware documentation for personal use. Commercial use, republishing or embedding prohibited."
+last_edit_enabled: true
+last_edit_last_updated_label: "Last updated"

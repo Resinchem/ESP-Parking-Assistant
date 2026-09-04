@@ -19,10 +19,12 @@ mqtt:
     - name: "Parking Distance"
       state_topic: "stat/parkasst/parkdistance"
       unit_of_measurement: "in"
-    - name: "Side Distance"                     #ESP32 Only
+    - name: "Side Distance"                     
       state_topic: "stat/parkasst/sidedistance"
       unit_of_measurement: "in"
     - name: "IP Address"
       state_topic: "stat/parkasst/ipaddress"
     - name: "MAC Address"
       state_topic: "stat/parkasst/macaddress"
+    - name: "Zone"
+      state_topic: "stat/parkasst/zone"

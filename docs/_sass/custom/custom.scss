@@ -1,0 +1,57 @@
+/* 1. Completely collapse the theme's title container to remove 'ghost' space */
+.callout-title {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 2. Tighten the outer dimensions of the callout box (Note, Warning, Important) */
+.callout {
+    padding: 0.75rem 1rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+    border-radius: 4px !important;
+}
+
+/* 3. Remove default top/bottom margins from paragraphs inside the callout */
+.callout p {
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important; 
+    line-height: 1.4 !important;
+}
+
+.callout p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* 4. Refinement for inline bold 'titles' within callouts */
+.callout p strong:first-child {
+    display: inline-block;
+    margin-bottom: 2px;
+    color: inherit;
+}
+
+/* 5. Slim down lists (bullets) when they appear inside a callout box */
+.callout ul {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0 !important;
+    padding-left: 1.2rem !important;
+}
+
+.callout li {
+    margin-bottom: 0.2rem !important;
+    line-height: 1.4 !important;
+}
+
+/* --- 6. Inline Code Styling (Dark Theme Optimization) --- */
+:not(pre) > code {
+    background-color: #2d2d2d !important; /* Lighter than your main background for depth */
+    color: #f0b000 !important;          /* A technical amber/orange for high contrast */
+    padding: 2px 5px !important;
+    border-radius: 3px !important;
+    border: 1px solid #444 !important;    /* Defines the edge so it doesn't bleed into the background */
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 85%;                       /* Slightly smaller to stay in line with paragraph text */
+}

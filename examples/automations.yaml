@@ -1,0 +1,83 @@
+# This is a simple example automation of using the LED strip as a "courtesy" light in the garage
+# It primarily shows how to set the sensor override switch, control the LEDs and then return
+# the system to normal operation.
+#
+# For this basic example, the LEDs will be turned on when the side service door is opened.
+# The LEDs will be turned off when the main door is then closed.  
+# As a safety, the LEDs are turned off after 30 seconds if no additional door triggers occur.
+# Uses the following entities outside of the Parking Assistant:
+#     binary_sensor.side_entry_door
+#     binary_sensor.main_entry_door
+#     timer.courtesy_light
+#
+# Note: If this were a real automation, you'd likely want to add conditions or other checks to this basic example
+
+automation:
+  # Turn on LED strip when side service door opens
+  - alias: Park Assist Courtesy Light On
+    id: paclo_123
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.side_entry_door
+        from: "off"
+        to: "on"
+        for: "00:00:01"
+      - actions:
+        # Enable manual override of Parking Assistant
+        - action: switch.turn_on
+          target:
+            entity_id: switch.parkasst_sensor_override
+        # Turn on LED strip
+        - action: light.turn_on
+          target:
+            entity_id: light.parkasst_led_strip
+          data:
+            brightness_pct: 100       # Full brightness
+            rgb_color: [255,255,255]  # White
+        # Start 30 second fallback timer
+        - action: timer.start
+          target:
+            timer.courtesy_light
+          data:
+            duration: "00:00:30"
+          
+  - alias: Park Assist Courtesy Light off
+    # Turn off LED strip 3 seconds after main service door is closed and re-enable Parking Assistant
+    id: paclo_321
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.main_entry_door
+        from: "on"
+        to: "off"
+        for: "00:00:03"
+      - actions:
+        # Turn off the LED strip
+        - action: light.turn_off
+          target:
+            entity_id: light.parkasst_led_strip
+        # Turn off override to re-enable normal Parking Assistant operation
+        - action: switch.turn_off
+          target:
+            entity_id: switch.parkasst_sensor_override
+        # Cancel the timer (optional)
+        - action: timer.cancel
+          target:
+            entity_id: timer.courtesy_light
+
+  - alias: Park Assist Courtesy Light Timeout
+    # Turn off LED strip and restore Parking Assistant after 30 seconds if no door triggered
+    id: paclto_123
+    triggers:
+      - trigger: timer.finished
+        target:
+          entity_id: timer.courtesy_light
+      - actions:
+        # Turn off the LED strip
+        - action: light.turn_off
+          target:
+            entity_id: light.parkasst_led_strip
+        # Turn off override to re-enable normal Parking Assistant operation
+        - action: switch.turn_off
+          target:
+            entity_id: switch.parkasst_sensor_override
+      

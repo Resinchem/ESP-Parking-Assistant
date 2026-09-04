@@ -1,0 +1,43 @@
+# Create these entries under your existing MQTT integration header,
+# whether that is in your primary configuration.yaml, a split yaml file
+# or in the MQTT section of a package.
+# 
+# Replace the "parkasst" section in the state topics with whatever topic
+# you specified in the MQTT setup portion of the Parking Assistant settings 
+# if different than the default.
+#
+# You can also change the name to anything desired and add any other standard
+# attributes like friendly name, icon, etc.
+#
+# For colors, text values (cmnd topic) can be set as HEX strings (e.g. '#ffffff') or as an RGB Tuple (e.g. '255,255,255')
+
+mqtt:
+  text:
+    - name: "Color1 Wake"
+      state_topic: "stat/parkasst/colorwake"
+      command_topic: "cmnd/parkasst/colorwake"
+
+    - name: "Color2 Active"
+      state_topic: "stat/parkasst/coloractive"
+      command_topic: "cmnd/parkasst/coloractive"
+
+    - name: "Color3 Parked"
+      state_topic: "stat/parkasst/colorparked"
+      command_topic: "cmnd/parkasst/colorparked"
+
+    - name: "Color4 Backup"
+      state_topic: "stat/parkasst/colorbackup"
+      command_topic: "cmnd/parkasst/colorbackup"
+
+    - name: "Color5 Standby"
+      state_topic: "stat/parkasst/colorstandby"
+      command_topic: "cmnd/parkasst/colorstanby"
+
+## Example of setting a color
+# action: text.setvalue
+#   target: 
+#     entity_id: text.colorwake
+#   data:
+#     value: "#ff0000"  # sets color to red via HEX color string
+#          OR
+#     value: "255,0,0"  # sets color to red via RGB color string

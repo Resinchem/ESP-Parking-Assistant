@@ -1,0 +1,77 @@
+# Create these entries under your existing MQTT integration header,
+# whether that is in your primary configuration.yaml, a split yaml file
+# or in the MQTT section of a package.
+# 
+# Replace the "parkasst" section in the state topics with whatever topic
+# you specified in the MQTT setup portion of the Parking Assistant settings 
+# if different than the default.
+#
+# You can also change the name to anything desired and add any other standard
+# attributes like friendly name, icon, etc.
+#
+# For distance entities, values can be in inches or millimeters depending upon
+# the Parking Assistant unit settings.  
+
+mqtt:
+  number:
+    - name: "Brightness Standby"
+      state_topic: "stat/parkasst/brightnessleep"
+      command_topic: "cmnd/parkasst/brightnessleep"
+      min: 0
+      max: 255
+      step: 1
+      mode: "slider"
+
+    - name: "Dist1 Wake"
+      state_topic: "stat/parkasst/distwake"
+      command_topic: "cmnd/parkasst/distwake"
+      min: 12    #305  (mm)
+      max: 192   #4990 (mm)
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"
+
+    - name: "Dist2 Active"
+      state_topic: "stat/parkasst/diststart"
+      command_topic: "cmnd/parkasst/diststart"
+      min: 12    #305  (mm)
+      max: 192   #4990 (mm)
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"
+
+    - name: "Dist3 Park"
+      state_topic: "stat/parkasst/distpark"
+      command_topic: "cmnd/parkasst/distpark"
+      min: 12    #305  (mm)
+      max: 192   #4990 (mm)
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"
+
+    - name: "Dist4 Backup"
+      state_topic: "stat/parkasst/distbackup"
+      command_topic: "cmnd/parkasst/distbackup"
+      min: 12    #305  (mm)
+      max: 192   #4990 (mm)
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"
+
+    - name: "Side Dist Left"
+      state_topic: "stat/parkasst/sidedistleft"
+      command_topic: "cmnd/parkasst/sidedistleft"
+      min: 2      #50   (mm) 
+      max: 48     #1220 (mm) 
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"
+
+    - name: "Side Dist Right"
+      state_topic: "stat/parkasst/sidedistright"
+      command_topic: "cmnd/parkasst/sidedistright"
+      min: 2      #50   (mm) 
+      max: 48     #1220 (mm) 
+      step: 1
+      mode: "box"
+      unit_of_measurement: "in"  #"mm"

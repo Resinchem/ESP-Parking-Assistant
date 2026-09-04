@@ -1,0 +1,29 @@
+# Create these entries under your existing MQTT integration header,
+# whether that is in your primary configuration.yaml, a split yaml file
+# or in the MQTT section of a package.
+# 
+# Replace the "parkasst" section in the state topics with whatever topic
+# you specified in the MQTT setup portion of the Parking Assistant settings 
+# if different than the default.
+#
+# You can also change the name to anything desired and add any other standard
+# attributes like icon, etc.
+
+mqtt:
+  select:
+    - name: "LED Effect"
+      state_topic: "stat/parkasst/effect"
+      command_topic: "cmnd/parkasst/effect"
+      options:
+        # These need to match the predefined effect names in the Parking Assistant
+        - "Out-In"
+        - "In-Out"
+        - "Full-Strip"
+        - "Full-Strip-Inv"
+        - "Solid"
+
+  button: 
+    - name: "Controller Restart"
+      command_topic: "cmnd/parkasst/restart"
+      payload_press: "PRESS"
+      device_class: "restart"

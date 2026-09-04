@@ -1,0 +1,27 @@
+# Create these entries under your existing MQTT integration header,
+# whether that is in your primary configuration.yaml, a split yaml file
+# or in the MQTT section of a package.
+# 
+# Replace the "parkasst" section in the state topics with whatever topic
+# you specified in the MQTT setup portion of the Parking Assistant settings 
+# if different than the default.
+#
+# You can also change the name to anything desired and add any other standard
+# attributes like icon, etc.
+
+mqtt:
+  switch:
+    - name: "Sensor Override"
+      state_topic: "stat/parkasst/sensoroverride"
+      command_topic: "cmnd/parkasst/sensoroverride"
+      payload_on: "ON"
+      payload_off: "OFF"
+
+  light:
+    - name: "LED Strip"
+      schema: json
+      state_topic: "stat/parkasst/light"
+      command_topic: "cmnd/parkasst/light"
+      brightness: true
+      effect: false
+      supported_color_modes:  ["rgb"]

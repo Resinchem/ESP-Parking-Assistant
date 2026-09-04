@@ -57,7 +57,7 @@ Due to the continued addition (and complexity) of new features, it has unfortuna
 Resource | Notes
 -----|----
 [Firmware Installation and Use](https://github.com/Resinchem/ESP-Parking-Assistant/wiki)|Maintained in this repo's old Wiki (v0.52 and earlier)
-[Original Build Guide]()|Original written build guide that covers up to v0.52
+[Original Build Guide](https://resinchemtech.blogspot.com/2022/11/esp-parking-assistant.html)|Original written build guide that covers up to v0.52
 
 ### Supporting this Project and Future Developement 
 

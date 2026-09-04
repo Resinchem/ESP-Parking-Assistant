@@ -2,6 +2,8 @@
 
 <img width="400" height="225" alt="Image" src="https://github.com/user-attachments/assets/a166f596-bfcc-403d-a03d-d33a84d8622e" />
 
+### Version 0.60 is now out with a complete rebuild!!
+
 Using a low cost ESP32 Mini, a short strip of around 20-40 WS2812b LED pixels and TFMini-s LIDAR distance sensor, you can create an easy-to-build  visual parking assistant system for putting your car in the same location in the garage each time.
 
 Some key features of the system include:

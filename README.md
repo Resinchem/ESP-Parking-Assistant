@@ -23,18 +23,15 @@ If you are just looking to install the firmware, just go to the [Installation Pa
 
 ## Additional Information and Resources
 
-> [!IMPORTANT]
-> _The new build guide and update video will be released Saturday morning, September 5 at 8:00am EDT.  Until that time, the links marked with (\*) will not be available.**_
-
 Resource | Details
 ------|-----
-[Build Guide*](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) |A how-to written guide including parts, schematics and overall assembly instructions.
+[Build Guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) |A how-to written guide including parts, schematics and overall assembly instructions.
 [Firmware Guide](https://resinchem.github.io/ESP-Parking-Assistant/)|Firwmare installer, onboarding and initial system configuration, and overall general application use.
 
 ### Video Overviews
 YouTube Video | Details
 -------|-------
-[ESP32 Parking Assistant Overhaul*](https://youtu.be/pNj6GjKsijo)|Primarily focuses on v0.60 new features, with brief overviews of operation, parts and assembly processes.
+[ESP32 Parking Assistant Overhaul](https://youtu.be/pNj6GjKsijo)|Primarily focuses on v0.60 new features, with brief overviews of operation, parts and assembly processes.
 [Parking Assistant Upgrades: Lateral Guidance](https://youtu.be/Eps6QCgKzaM)|Covers new features introduced starting with v0.50.  Primarily focuses on the side sensor addition, wiring and use.
 [Original Parking Assistant Video](https://youtu.be/HqqlY4_3kQ8)|Now a bit outdated, as the original version used an ESP8266 and substandard shifter.  But still contains useful background information, including a comparison of distance sensors and why the TFMini-S was selected.
 

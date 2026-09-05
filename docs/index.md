@@ -21,8 +21,7 @@ This site contains information regarding the installation, configuration and use
 
 <b>This documentation site only applies to version 0.60 and later of the firmware</b>, as this is a completely different firmware structure compared to the older versions.  If you are looking for documentation for versions prior to v0.60, please see the original project's [Github Wiki](https://github.com/Resinchem/ESP-Parking-Assistant/wiki).
 
-**Video and Build Guide for VERSION 0.60 WILL BE RELEASED ON SEPTEMBER 5, 2026 at approximate 8 am EDT.<br>Until that time, links and other information in this guide may be unavailable.**
-{: .label .label-yellow }
+
 
 > **⚠️ Build Instruction Notice**<br> This documentation **does not** contain build instructions, parts lists, or wiring diagrams. For the physical build details, please refer to the following resources:
 > * **YouTube Overview: [{{site.substitutions.youtube_title}}]({{site.links.youtube_video}})**

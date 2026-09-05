@@ -1,0 +1,34 @@
+name: Documentation Issue or Error
+description: Report a mistake, broken link or other documentation-related issue.
+title: "[Brief Title] "
+labels: documentation, unconfirmed
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Important:** This form is strictly for reporting issues related to the Parking Assistant documentation.
+        If you need help with hardware wiring, power issues, or general setup, please ask in [Discussions](https://github.com/resinchem/ESP-Parking-Assistant/discussions).
+  - type: checkboxes
+    id: operating-systems
+    attributes:
+      label: Where is the error or issue?
+      description: Check all that apply.
+      options:
+        - label: The official [Firmware Documentation](https://resinchem.github.io/ESP-Parking-Assistant/)
+        - label: The [Project's Github Repo](https://github.com/Resinchem/ESP-Parking-Assistant) (READMEs or other documentation)
+        - label: The written [Build Guide]() blog article
+        - label: The [YouTube Video]() description
+        - label: Other (please specify below)*
+  - type: input
+    id: other-source
+    attributes:
+      label: "*Other Documentation Source"
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the Issue
+      description: Please try to include the page, section or area of the documentation where the issue exists.
+  - type: markdown
+    attributes:
+      value: |
+        ## Thank you for reporting the issue!

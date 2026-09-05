@@ -1,0 +1,66 @@
+name: Firmware Bug Report
+description: Report a bug, crash, or unexpected firmware behavior
+title: "[Brief Title] "
+labels: bug, unconfirmed
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Important:** This form is strictly for firmware bugs or software defects.
+        If you need help with hardware wiring, power issues, or general setup, please ask in [Discussions](https://github.com/resinchem/ESP-Parking-Assistant/discussions).
+  - type: input
+    id: firmware-version
+    attributes:
+      label: Firmware Version
+      description: Which firmware version are you running? (e.g., v0.60)
+      placeholder: e.g., v0.60
+    validations:
+      required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the Bug
+      description: What happened vs. what you expected? Provide a clear and concise description of the issue.
+    validations:
+      required: true  
+  - type: checkboxes
+    id: operating-systems
+    attributes:
+      label: What Actions Have You Tried?
+      description: Check all that apply.
+      options:
+        - label: I have reviewed the [Troubleshooting Guide](https://resinchem.github.io/ESP-Parking-Assistant/troubleshooting.html)
+        - label: I have reviewed other issues to see if the problem has already been reported
+        - label: I have verified my wiring and components (use of non-standard parts cannot be supported)
+  - type: textarea
+    id: other-troubleshooting
+    attributes:
+      label: Please List Any Other Troubleshooting Steps Tried
+  - type: markdown
+    attributes:
+      value: |
+         > [!NOTE]
+         > **Configuration File (Optional)**
+         > Providing your configuration helps diagnose firmware setup issues much faster. Configuration files do not contain passwords, but you may redact or edit any values you prefer not to share before submitting.
+
+  - type: textarea
+    id: config-files
+    attributes:
+      label: Current Configuration File (optional)
+      description: Copy/Paste the JSON output from the controller's Config Dump feature 
+      render: json
+    validations:
+      required: false  
+  - type: textarea
+    id: addtional-info
+    attributes:
+      label: Any Additional Information
+      description: Please provide any additional info that may be helpful in resolving your issue.  More information is better than less!
+  - type: upload
+    id: screenshots
+    attributes:
+      label: Upload Images
+      description: If applicable, attach any screenshots or images that may be helpful
+    validations:
+      required: false
+      accept: ".png,.jpg,.jpeg,.gif,.svg,.webp"    

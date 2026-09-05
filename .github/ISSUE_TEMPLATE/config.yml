@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Questions & Hardware Support
+    url: https://github.com/resinchem/ESP-Parking-Assistant/discussions/new?category=troubleshooting-and-assistance
+    about: Need help with wiring, power supplies, sensors, or initial setup? Ask in Discussions!
+  - name: 💡 Feature Requests & Ideas
+    url: https://github.com/resinchem/ESP-Parking-Assistant/discussions/new?category=ideas
+    about: Have an idea or request for a new feature? Share it in Discussions!
+  - name: 📣 Show and Tell
+    url: https://github.com/resinchem/ESP-Parking-Assistant/discussions/new?category=share-your-build
+    about: Want to share photos or video of your completed garage build? Post here!

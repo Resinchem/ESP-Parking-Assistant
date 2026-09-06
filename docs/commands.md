@@ -86,10 +86,11 @@ This contains much of the same information as the Config Dump, but in addition t
 
 ### Reset All
 
-This performs a "factory reset" on the controller, wiping out all saved configuration data.
+This performs a "factory reset" on the controller, wiping out all saved configuration data. This is normally used if you need to make a change to the WiFi or the global Device Name, as changing either of these items **requires** a full reset.
 
 > **❗ HIGH RISK**<br>This command wipes **ALL** configuration data from the controller, including saved Wi-Fi credentials. Use this only if you intend to return the controller to its original installation state. You will have to repeat the [Onboarding]({{ '/onboarding' | relative_url }}) and [System Setup]({{ '/setupmain' | relative_url }}) processes.
 {: .warning }
+
 
 ### External Control
 Some of these commands can also be sent via MQTT or via the HTTP API.  See [Using MQTT and the API]({{ '/integrationmain' | relative_url }}) for a list of applicable commands.

@@ -51,6 +51,9 @@ Fill out the following common fields for both controller types:
     * Each controller on your network **must** have a unique name.
       * The device name is not only used to help you identify which controller is being accessed via the web application, but this is also used for the WiFi connection and as the MQTT client if MQTT is enabled.  Therefore, all devices should have a unique name across all other devices on your local network.
 
+>⚠️ **Verify All Information Before Submitting!**<br>Once the system successfully joins WiFi, any future changes of the **WiFi credentials** or the **Device Name** will require a full [system reset](commands#reset-all) and onboarding again.
+{: .important}
+
 ### Step 3: Submit and Verify
 Once you have completed all fields, click **Submit**. The controller will reboot and attempt to join your network. The onboarding page on your mobile device will show the connection status.
 

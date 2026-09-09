@@ -100,7 +100,7 @@ The original system used an ESP8266 and a two foot strip of 5V WS2812b LEDs.  Th
 There are many more features and improvements in this latest version.  Many of these will be covered in additional sections of this guide.
 
 ## Caveats and Hardware Support
-This system was built to provide as much flexibility as possible, but replacing some hardware may require firmware modifications.  For example, if you wish to use a different ESP32 model (e.g. S3, C2) or wish to use wired sensors other than the AM312 PIR or VL53L0X, you may need to slightly modify and compile your own version of the firmware.  
+This system was built to provide as much flexibility as possible, but replacing some hardware may require firmware modifications.  For example, if you wish to use a different ESP32 model (e.g. S3, C2) or wish to use wired sensors other than the TFMini or VL53L0X, you may need to slightly modify and compile your own version of the firmware.  
 
 The [written guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) includes a detailed parts list indicating which components are interchangeable and which might require code modifications.  See the the [Modifying the Firmware](modifications) topic for more information on how to modify the firmware for your own hardware.
 

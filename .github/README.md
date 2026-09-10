@@ -1,0 +1,1 @@
+Templates for Github.  Not part of the Parking Assistant project.

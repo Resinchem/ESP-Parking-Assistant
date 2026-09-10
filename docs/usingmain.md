@@ -47,6 +47,7 @@ Active settings are applied immediately, which is another clue.  Changes to DEFA
 * **[Setting Zone Distances]({{ '/zonedistance' | relative_url }})** - Configure zone trigger distances.
 * **[Zone Colors and Effects]({{ '/zonecolors' | relative_url }})** - Assign colors, the approach effect and overall LED brightness.
 * **[Sensor Override]({{ '/sensoroverride' | relative_url }})** - Temporarily disable the sensor(s) for manual system control.
+* **[Controller Commands]({{ '/commands' | relative_url }})** - System commands to reboot the system, upgrade the firmware and more.
 
 At a minimum, you will need to configure the zone distances for your particular parking area.
 

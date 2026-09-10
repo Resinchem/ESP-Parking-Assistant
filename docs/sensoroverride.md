@@ -26,7 +26,7 @@ The master switch to disable the sensors can be found on the main web page under
 >🔎 **Changing the Override Setting is Immediate!**<br>The sensor override setting is the only setting on the page that takes effect <i>immediately</i> upon changing the toggle, without the need to 'Apply' or 'Save' the setting.
 {: .warning}
 
-When the sensors are disabled, you cannot make any changes to the active zone or side distances.  MQTT updates, if enabled, will still occur, but sensor data will only be updated per the configuration teleperiod.  See the [MQTT Setup &amp; Config](mqtt) for more information on using MQTT.
+When the sensors are disabled, you cannot make any changes to the zone or side distances.  MQTT updates, if enabled, will still occur, but sensor data will only be updated per the configuration teleperiod.  See the [MQTT Setup &amp; Config](mqtt) for more information on using MQTT.
 
 ### Remotely Disabling/Enabling the Sensors
 As mentioned, the most common reason for disabling the sensors is so that the LEDs can be controlled manually from a third-party system.  But to use the LEDs in an external automation or script, that system also needs a way to disable the sensors before controlling the LEDs and then re-enabling the sensors when done.
@@ -35,12 +35,12 @@ Luckily the system supports this option via two methods: MQTT or the HTTP API.  
 
 <b><u>MQTT Example</u></b>
 
-The remote system would post an MQTT message such as the following (note the topic is defined as part of MQTT setup):
+For this example, the remote system would post an MQTT message such as the following to first disable the sensors (note the topic is defined as part of MQTT setup):
 
 Topic: `cmnd/parkasst/sensoroverride`<br>
 Payload: `on` 
 
-In this example, an external system would publish to the sensor override topic with a payload of `on` to first disable the sensors.  Additional messages could then set the state, color and brightness of the LEDs. 
+Using a payload of `on` disables the sensors.  Additional messages could then set the state, color and brightness of the LEDs. 
 
 Topic: `cmnd/parkasst/ledstate`<br>
 Payload: `on`
@@ -58,14 +58,14 @@ Payload: `off`
 
 <b><u>API Example</u></b><br>
 
-This is actually easier, since the API allows commands to be enable.  Recreating the above process to disable the sensors and turn on the LEDs, setting the color and brightness can all be done with a single API call:
+This is actually easier, since the API allows commands to be chained together in a single call.  Recreating the above process to disable the sensors and turn on the LEDs, set the color and LED brightness can all be done with a single API command:
 
 `http://[your_controller_ip]/api?sensoroverride=on&ledstate=on&ledcolor=ff0000&ledbrightness=128`
 
 Then to simply reenable the system:
 `http://[your_controller_ip]/api?sensoroverride=off`
 
->⚠️ **Troubleshooting Note**<br>If you find that the Parking System suddenly stops working, double-check the sensor override switch.  The issue could be that this setting was toggled on via an external system.
+>⚠️ **Troubleshooting Note**<br>If you find that the Parking System suddenly stops working, double-check the sensor override switch.  The issue could be that this setting was toggled on via an external system and never reset back to normal operating mode.
 {: .important}
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; border-top: 1px solid #333; padding-top: 20px;">

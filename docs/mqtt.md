@@ -14,16 +14,18 @@ nav_order: 1
   <img src="images/mqtt_logo.jpg" alt="MQTT Overview">
 </p>
 
-If you wish to use MQTT with the system, you must meet a few prerequisites and also enable and configure MQTT in the web application. 
+If you wish to use MQTT with the system, you must meet a few prerequisites and also enable and configure MQTT in the web application. If you are unfamiliar with MQTT, you may wish to watch the following first, which covers the basics of MQTT, with a focus on using MQTT with Home Assistant:
+
+YouTube Video: [MQTT 101: Integrate your DIY Devices into Home Assistant](https://youtu.be/Q0S0xOW35k8)
+
+## Prerequisites
 
 **MQTT is not available in [AP Mode] - WiFi is required**
 {: .label .label-yellow }
 
-
-## Prerequisites
 To use MQTT you must have a local MQTT broker available on your network. While you can technically use a cloud-based MQTT provider, this is not recommended due to the lag introduced between sending a command and having it received by the system. One of the most popular free local versions is [Eclipse Mosquitto](https://mosquitto.org/).
 
-If you are a Home Assistant user, you can turn Home Assistant into your MQTT broker by installing the MQTT broker app/add-on.
+If you are a Home Assistant user, you can turn Home Assistant into your MQTT broker by installing the MQTT broker app/add-on. See the official [Home Assistant Documentation](https://www.home-assistant.io/apps/) for more information on installing apps.
 
 
 ## Understanding Topics
@@ -33,7 +35,7 @@ MQTT works using a subscribe/publish method. The system allows you to define the
 * **Subscribe (cmnd/):** All topics subscribed to by the controller are prepended with `cmnd/`.
 
 ## Enabling and Configuring MQTT
-MQTT configuration is found under the primary controller's **Integrations**, accessible from the main page of the web application.
+MQTT configuration is found under the controller's **Integrations** page, accessible from the main page of the web application.
 
 <img src="images/mqtt_integration_btn.jpg" alt="integration button" width="300px">
 
@@ -43,7 +45,7 @@ MQTT Setup is listed at the top of the optional integrations page.
 
 You can simply slide the toggle to enable or disable MQTT.  When disabled, the remaining fields are locked.
 
->⚠️**Situations that Prevent ENABLING MQTT**<br> - Your system is in Access Point (no WiFi) mode. MQTT requires WiFi.<br><br>⚠️**Situations that Prevent DISABLING MQTT**<br> - You have a Discovered Device in Home Assistant.  The device must be removed before MQTT can be disabled.
+>⚠️**Situations that Prevent _ENABLING_ MQTT**<br> - Your system is in Access Point (no WiFi) mode. MQTT requires WiFi.<br><br>⚠️**Situations that Prevent _DISABLING_ MQTT**<br> - You have a Discovered Device in Home Assistant.  The device must be removed before MQTT can be disabled.
 {: .important}
 
 When enabling MQTT, you must also complete the following fields (all are required):
@@ -58,7 +60,7 @@ MQTT Subscribe Topic|The MQTT Topic that the Parking Assistant will subscribe to
 MQTT Publish Topic|The MQTT topic where the Parking Assistant will publish its states.  The topic entered here is prefixed with `stat/` to indicate 'state'. The topic may be up to 16 alphanumeric characters.  Spaces and symbols are not permitted.
 Idle Telemetry Period|How often, in seconds, the system refreshes the sensor and zone states when the system is in standby mode.  See the discussion below.
 
-> **💡 Integration Tip**<br>Since the system prepends `stat/` and `cmnd/` automatically, you can use the same string for both (e.g., `parkasst`) to simplify your naming convention.
+> **💡 Integration Tip**<br>Since the system prepends `stat/` and `cmnd/` automatically, you can use the same string for both (e.g., `parkasst`) to simplify your naming convention, but this is optional and you can use different topics if desired.
 {: .note }
 
 ### Additional Information on Topics
@@ -71,7 +73,7 @@ Similarly, the Parking Assistant system will subscribe and listen for commands p
 ## Telemetry Period and When State Topics are Updated
 <br>
 <b><u>During The Boot Up Process</u></b><br>
-When MQTT is enabled, the system publishes all initial states immediately after the boot process finishes.  To avoid a blocking situation in the main loop, states are placed in a queue and updated sequentially as the main loop runs.  This just means that when the system first boots, it will take a few seconds before all the states are updated on the broker.
+When MQTT is enabled, the system publishes all initial states immediately after the boot process finishes.  To avoid a blocking situation in the main loop, states are placed in a queue and updated sequentially as the main loop runs.  This just means that when the system first boots, it will take a few moments before all the states are updated on the broker.
 
 <b><u>When an Active Setting is Changed</u></b><br>
 If you make a change to an active setting (e.g. a zone color, distance or LED brightness), the change is immediately published to the broker.  Changes to Default values require a reboot, so these changes are published following the reboot process.
@@ -93,7 +95,7 @@ By design, the system does not wake or become active when a car departs.  Howeve
 
 
 <b><u>When the System is in Standby Mode</u></b><br>
-When the system is in standby mode, whether a car is present or absent, there really isn't a reason to continually pound the MQTT broker with constant sensor or zone updates.  When the system is idle, then these states are only updated once per the 'idle telemetry period' that you specify.  This could be a range from 60 to 600 seconds.  In practice, you should not need to update these states any more than once every 3-5 minutes (180-300 seconds), but you can make the period longer or shorter if you have a particular need.
+When the system is in standby mode, whether a car is present or absent, there really isn't a reason to continually pound the MQTT broker with constant sensor or zone updates.  When the system is idle, these states are only updated once per the 'idle telemetry period' that you specify.  This could be a range from 60 to 600 seconds.  In practice, you should not need to update these states any more than once every 3-5 minutes (180-300 seconds), but you can make the period longer or shorter if you have a particular need.
 
 ## Saving and Updating MQTT Configuration Changes
 If you make any changes to the MQTT settings, <i>including simply toggling the enable switch</i>, you **must** click the 'Save &amp; Reboot' button to commit your changes.  MQTT settings are saved in your primary configuration file and MQTT is enabled during the boot process, so any changes (including just enabling/disabling MQTT), require this save and reboot process.

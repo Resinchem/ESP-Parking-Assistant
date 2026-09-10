@@ -17,7 +17,17 @@ Most MQTT and Home Assistant Discovery issues are the result of a configuration 
 I highly recommend **[MQTT Explorer](https://mqtt-explorer.com/)**. It is a free, open-source tool that acts as a window into your broker, allowing you to see if the Parking Assistant is actually talking and what it’s saying.
 
 ## General MQTT Issues
-If your external system doesn't seem to be receiving MQTT messages from the controller, or if the controller doesn't seem to accept MQTT commands sent, the first thing to verify are the MQTT topics and payloads.
+If your external system doesn't seem to be receiving MQTT messages from the controller, or if the controller doesn't seem to accept MQTT commands sent, the first thing to verify are the connectivity to the broker, then the MQTT topics and payloads.
+
+### Broker Connectivity
+
+During the boot process, the system will attempt to connect to the MQTT broker.  It will try up to 10 times. If the [Boot Indicators](booting) are enabled, the LED strip will be used to show if there is an issue connecting to the broker.  This could occur if you entered the wrong IP address, port or credentials when you setup the integration.
+
+<img src="images/mqtt_led_attempts.jpg" alt="LED Strip" width="250px">
+<br><br>
+For a "normal" connection, only one or two LEDs may light up in green (or it may happen so quickly you don't see the green LEDs at all).  However, if there is an issue, you'll see another LED light up every 3-5 seconds as a new connection attempt occurs.  If the connection fails after 10 attempts, the full LED strip will briefly flash yellow and MQTT will be disabled.  Check your broker settings after the boot process continues.
+<br><br>
+<i>If there is an connectivity or settings issue, the connection attempt may take up to 60 seconds.  The web application will be unavailable during this time and won't be accessible until the boot operation completes.</i>
 
 ### Case Sensitivity
 <br>

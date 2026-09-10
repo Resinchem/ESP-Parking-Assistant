@@ -77,6 +77,11 @@ Also recall from the [Calibration Mode](sensorcalibrate) topic, when calibration
 
 However, if you simply closed the browser without exiting calibration mode, it will remain in the 'calibration state'... impacting normal operation.  If this occurs, just relaunch the web application.  Just loading the main page will exit the preceding calibration mode.
 
+### System show Side Sensor as Disabled
+If you previously enabled the side sensor, but it is shown as disabled in the web interface, this means that the system was unable to initialize the VL53L0X during the boot process.  This could be a result of incorrect wiring (SDA/SCL reversed) or could be a signal issue if you have a long wiring run between the controller and sensor.  See the [Build Guide]() for information on dealing with long cable runs to the side sensor, as a signal "booster" may be needed.
+
+Also note that if the Boot LED indicator is enabled, the LEDs will briefly flash orange during the boot if side sensor initialization fails.  See the [Boot Process](booting) topic for more information.
+
 ### Other Issues Not Covered Above
 If the hardware is operating correctly, most other operational issues are usually related to misconfigured settings... for example, having a 'active' zone distance that is greater than the 'wake' zone distance.  The web application generally prevents these sort of configuration errors, but if MQTT or the API are used to set these values, these checks are not executed.
 

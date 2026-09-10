@@ -17,9 +17,12 @@ has_toc: false
 
 A lot is going on in the background when a controller first boots up... connecting to WiFi, configuring the hardware, starting up the web server and API routines and connecting to an MQTT broker (if enabled).  The system can provide some basic visual indicators of this boot process and can help you determine where a problem may exist if the controller isn't functioning as intended.
 
+>⚠️**Enable Indicators During Setup**<br>It is highly recommended that you leave the boot indicators enabled at least during initial system configuration and setup and until you are sure all hardware and any optional integrations are working properly.  If your system has an issue during the setup/boot process and these indicators are disabled, it may be difficult to determine where and why the failure is occurring.
+{: .important}
+
 ## Visual Boot Indicators
 
-When you power on the primary controller, the following steps occur:
+When you power on the controller, the following steps occur:
 * The system looks for a configuration file in its own storage (SPIFFS) partition. If not found, it enters 'Onboarding mode' and starts the WiFi Hotspot.  Setup halts at this point.
 * The system attempts to connect to WiFi.  Again, if it fails, it enters Onboarding mode and further setup halts.
 * The configuration file is opened and your particular system settings are loaded.
@@ -45,6 +48,15 @@ This option can be disabled if your board does not have a second LED.  Or if you
 
 >📵 **Access Point (No WiFi) Mode**<br>If your system is configured for Access Point mode, then the blue LED will never illuminate after initial onboarding, regardless of indicator setting.
 {: .note}
+
+### MQTT Broker Connection
+If you have enabled MQTT under integrations, the LED strip will show each broker connection attempt.  The system will make up to 10 tries before failing.  Each attempt is shown on the LED strip as it occurs:
+
+<img src="images/mqtt_led_attempts.jpg" alt="LED Strip" width="250px">
+
+**Each attempt may take 3-5 seconds**.  If unsuccessful after 10 tries, the full LED strip will briefly flash yellow and MQTT will be disabled.  The normal boot process then continues.  This entire process may take up to 60 seconds to complete before failing. The web page will be inaccessible during this period, as it is not available until the entire boot operation completes.
+
+<i>When a normal successful connection is made, it may happen so quickly you may only see one or two LEDs briefly flash in green... or may not see the green LEDs at all.  This normal behavior.</i>
 
 ### Side Sensor Initialization
 If you have enabled and configured a side sensor (lateral guidance), the boot process will initialize the communication with the sensor.  If this initialization **FAILS**, then the LED strip briefly flashes orange. 
@@ -72,7 +84,7 @@ When OTA mode is implemented, the LEDs change to alternating red and green.  Dur
 
 After this final step, the system enters normal operating mode.
 
->👉**System Always Starts in "Parking" Mode after Rebooting**<br>By design, any time the system boots, it will start out in 'active' mode.  If a car is present, the LEDs will light up appropriately based on position.  The LEDs will remain on for the "Park Time" until the system enters 'Standby' mode.  If no object is in any zone, then the system will enter standby after the "Exit Time".
+>👉**System Always Starts in "Active" Mode after Rebooting**<br>By design, any time the system boots, it will start out in 'active' mode.  If a car is present, the LEDs will light up appropriately based on position.  Just for the boot process, the LEDs will remain on for the "Exit Time" and then enter 'Standby' mode.  If no object is in any zone, then the system will enter standby immediately after the boot finishes.
 {: .note}
 
 

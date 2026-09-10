@@ -14,7 +14,7 @@ nav_order: 5
   <img src="images/apmode_top.jpg" alt="Zone Header" width="200px">
 </p>
 
-An oft requested feature, version 0.60 of the firmware introduces the ability to enable local Access Point mode instead of using WiFi.  This is most often needed when installing the Parking Assistant in a location, such as a detached garage or outbuilding where WiFi may not be available.
+An oft requested feature, version 0.60 of the firmware introduced the ability to enable local Access Point mode instead of using WiFi.  This is most often needed when installing the Parking Assistant in a location, such as a detached garage or outbuilding, where WiFi may not be available.
 
 Before you can enable this mode (and disable the WiFi features), a few prerequisites must be met:
 
@@ -27,8 +27,8 @@ Since MQTT (and Discovery) require WiFi, you cannot switch the system to AP Mode
 ### <u>Other Features Will Also Be Disabled or Limited</u>
 Other features that rely on WiFi will also be disabled/unavailable when in AP Mode:
 - Firmware Updates:  Firmware updates from within the app use WiFi to transfer the new file.
-- Arduino OTA Updates:  This feature requires WiFi/mDNS, so it will also be disabled 
-- HTTP API: Commands can only be sent from devices connected to the AP hotspot
+- Arduino OTA Updates:  This feature requires WiFi/mDNS, so it will also be disabled. 
+- HTTP API: Commands can only be sent from devices connected to the AP hotspot.
 
 ## Enabling Access Point Mode
 Once the above prerequisites have been met, you can toggle AP Mode from the Hardware Settings page.
@@ -43,19 +43,19 @@ When toggled 'ON', two additional fields are shown:
 Setting|Purpose
 ---|---
 HotSpot Name|This is the hotspot that will be broadcast by the system when in AP Mode.  It can be up to 32 characters, numbers or symbols except for the backslash (\\) or quote (") symbols.  It cannot be blank and should not be the same as any other Parking Assistant hotspot name.
-Hotspot Password|Enter a password of 8-24 characters in lenght.  Optionally (but not recommended), you can leave the hotspot 'open', which will not require a password.
+Hotspot Password|Enter a password of 8-24 characters in length.  Optionally (but not recommended), you can leave the hotspot 'open', which will not require a password.
 
 >⚠️ **Password Recommended**<br>Leaving a blank password/open hotspot may be more convenient when you need to interact with the system, but anyone else in range of the hotspot can also access the web application and interact with the system.  Even though the range of an ESP32 is rather limited, applying a password is still recommended.
 {: .important}
 
-Finally, click the 'Save and Reboot' button.  The system will reboot, but this time, WiFi will not even be started.  Instead, the system will begin broadcasting a local hotspot using the name you specified.  Otherwise, the system will function and operate identically.
+Finally, click the 'Save and Reboot' button.  The system will reboot, but this time, WiFi will not even be started.  Instead, the system will begin broadcasting a local hotspot using the name you specified.  Otherwise, the system will function and operate normally.
 
 ## Accessing the Web Application when in AP Mode
-So, if the system is not on WiFi, how do you return to the web application to interact with the system or make other changes?  Well, you use a mobile device (tablet or laptop recommended, just due to large screen real estate, but a phone will work as well) and connect to the local hotspot.
+So, if the system is not on WiFi, how do you return to the web application to interact with the system or make other changes?  Well, you use a mobile device (tablet or laptop recommended, but a phone will work) and connect to the local hotspot.
 
 In addition, because the radio on the ESP32 isn't very powerful, you'll need to be relatively near the parking assistant to join the hotspot.
 
-_The following instructions and screen shots may be slightly different depending upon the type and operating system of the mobile device in use. Android, iOS and Windows all work slightly different, but the steps should be similar._
+_The following instructions and screen shots may be slightly different depending upon the type and operating system of the mobile device in use. Android, iOS and Windows all work just a bit differently, but the steps should be similar._
 
 Using your mobile device, search available WiFi Networks:
 

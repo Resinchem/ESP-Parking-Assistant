@@ -21,6 +21,9 @@ If you are a Home Assistant user, you can integrate your LED controller to use i
 </p>
 
 ## Prerequisites
+**MQTT is not available in [AP Mode] - WiFi is required**
+{: .label .label-yellow }
+
 Before attempting to enable Discovery, ensure your environment meets the following requirements:
 
 1. **Home Assistant:** Version 2026.3 or later is recommended.

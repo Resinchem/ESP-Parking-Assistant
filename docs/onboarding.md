@@ -15,19 +15,19 @@ has_toc: false
   <img src="images/onboard_header.jpg" alt="Onboarding Header">
 </p>
 
-Once you have successfully flashed the firmware to your Primary and Display controllers, the next step is to connect them to your local Wi-Fi network. 
+Once you have successfully flashed the firmware to your ESP32, the next step is to connect it to your local Wi-Fi network. 
 
-**🌐 Local Network Reminder**<br>While this device requires a Wi-Fi connection for the initial setup, they **do not** require any Internet access for full functionality. Switching to "**Access Point (no WiFi)**" mode can be done after initial onboarding and setup.
+**🌐 Local Network Reminder**<br>While this device requires a Wi-Fi connection for the initial setup, it **does not** require any Internet access for full functionality. Switching to "**Access Point (no WiFi)**" mode can be done after initial onboarding and setup.
 {: .note }
 
 ## 1. Joining Local WiFi
 For the initial onboarding and setup, WiFi is required.  If your planned location does not have reliable WiFi, you can complete these initial steps in a different location, such as inside your house.  Only the ESP32 is needed for this step, so you can flash and onboard it before assembly, or if you used the recommended pin headers, simply remove the ESP32 and take it to a WiFi-enable location.
 
-**🚫 Special No WiFi Mode**<br>While mentioned a few times, you can opt to run the system in "Access Point" mode for situations where WiFi may not be available, such as in a detached garage or outbuilding.  However, the initial onboarding and setup steps need WiFi.  So, flash and complete these steps in an area where WiFi is available.  After setup, you can switch off WiFi before final installation.
+**🚫 Special No WiFi Mode**<br>While mentioned a few times, you can opt to run the system in "Access Point" mode for situations where WiFi may not be available, such as in a detached garage or outbuilding.  However, the initial onboarding and setup steps need WiFi.  Flash and complete these onboarding steps in an area where WiFi is available.  After setup, you can switch off WiFi before final installation.
 {: .important }
 
 ### Step 1: Join the Hotspot
-Once flashed, the controller will broadcast its own Wi-Fi network. It’s essentially a very tiny, very exclusive club where the only item on the menu is "Configuration." If your phone warns you that the network has no Internet access, take a deep breath. <i>Shall we play a game?</i> No—we're just setting up Wi-Fi IP, not launching global thermonuclear war. Select 'Stay Connected' and proceed.
+Once flashed, the controller will broadcast its own Wi-Fi network. It’s essentially a very tiny, very exclusive club where the only item on the menu is "Configuration." If your phone warns you that the network has no Internet access, take a deep breath. <i>Shall we play a game?</i> No—we're just setting up Wi-Fi and getting an IP address, not launching global thermonuclear war. Select 'Stay Connected' and proceed.
 
 The default name for the Wi-Fi hotspot is: `Parking_Assistant_AP`
 
@@ -68,7 +68,7 @@ Once the controller successfully joins your WiFi, the status page will update to
 
 The controller will stop broadcasting the hotpsot and your phone or mobile device will disconnect and <i>should</i> reconnect to your normal WiFi.  Once this step is complete, you can even use the 'Visit Device' button to immediately go to the controller's web interface.
 
-Another visual indicator is, that by default, the _blue_ LED on the ESP32 will light up when a successful WiFi connection is made.
+As another visual indicator, the _blue_ LED on the ESP32 will light up when a successful WiFi connection is made.
 
 ![onboard_led](images/onboard_blue_led.jpg)
 
@@ -78,17 +78,17 @@ But if the controller is unable to connect to your WiFi for any reason, the foll
 
 ![onboard_fail](images/onboard_fail.jpg)
 
-If you see the above status page instead of the 'Success' page, it means the controller was unable to connect to your WiFi using the provided information.  This could be an improperly entered SSID or password (these are CASE-SENSITIVE), a firewall issue or other network-related problem.  When this occurs, the hotspot will start broadcasting again.  If you are still on the hotspot WiFi, you can simply click 'Try Again' to return to the onboarding page.  If your phone disconnected from the original hotspot, you'll need to reconnect before returning to the main `192.168.4.1` onboarding page.
+If you see the above 'Timeout' page instead of the 'Success' page, it means the controller was unable to connect to your WiFi using the provided information.  This could be an improperly entered SSID or password (these are CASE-SENSITIVE), a firewall issue or other network-related problem.  When this occurs, the hotspot will start broadcasting again.  If you are still on the hotspot WiFi, you can simply click 'Try Again' to return to the onboarding page.  If your phone disconnected from the original hotspot, you'll need to reconnect before returning to the main `192.168.4.1` onboarding page.
 
 If you run into any issues with the onboarding process, see the [Troubleshooting](troubleshooting) section for common issues and resolutions.
 
 ## 2. Assign Static or Reserved IP Addresses
 
-This step is optional, but I recommend assigning a static or reserved IP address to the controller.  This way, you'll always use the same address to access the web interface.  If you don't implement this option and your router, at some point in time, assigns a new IP address, you'll have to locate this IP before you can reach the web app.
+This step is optional, but I recommend assigning a static or reserved IP address to the controller.  This way, you'll always use the same address to access the web interface.  If you don't implement this option and your router assigns a new IP address at some point, you'll have to locate this IP before you can reach the web app.
 
 1. Open your router's configuration page.
-2. Create a **Static Reservation** for the Parking Assistant Controller.
-3. Power cycle each device to ensure they are using the newly assigned static IPs.
+2. Create a **Static IP or DHCP Reservation** for the Parking Assistant Controller.
+3. Power cycle each device to ensure it is using the newly assigned static/reserved IP.
 
 ---
 

@@ -16,7 +16,7 @@ nav_order: 3
 
 To understand how the system works, specifically for some options like the Park and Exit times, it is important to understand how the system operates.
 
-When a car is parked and the system is in standby/sleep mode, it does not awaken when the car pulls out (no real need for front guidance when backing out).  So the system only wakes and enters active mode when all zones are empty and a vehicle (or other object) is detected in one of the zones.  Normally this will be the wake zone when a car is parking.  A few examples may help with understanding the operation.
+When a car is parked and the system is in standby/sleep mode, it does not awaken when the car pulls out (no real need for front guidance when backing out).  So the system only wakes and enters active mode when all zones are empty and a vehicle (or other object) is detected entering one of the zones.  Normally this will be the wake zone when a car is parking.  A few examples may help with understanding the operation.
 
 ### Car Parked
 
@@ -25,7 +25,7 @@ When a car is parked and the system is in standby/sleep mode, it does not awaken
 **System Mode**: Standby<br>
 **Timers**: Inactive
 
-Once a car is parked and the active park time has expired, the system enters standby mode.  It remains in standby mode as long as any zone is occupied.  This means you can walk through a zone and the system remains asleep.
+Once a car is parked and the active park time has expired, the system enters standby mode.  It remains in standby mode as long as any zone is occupied.  This means you can walk through a zone, or even between the front of the car and the sensor, and the system will remain asleep.
 
 ### Car Departing
 
@@ -36,8 +36,6 @@ Once a car is parked and the active park time has expired, the system enters sta
 
 When in standby mode, the system remains asleep as long as an object continues to be detected in any zone.  This means the system does not 'activate' when backing out of the garage.  This is by design, since guidance is really meaningless when leaving.  
 
-In addition, when a car is present and the system is in standby mode, you can walk around the car or through any zones without waking the system
-
 ### All Zones Vacant - Armed Mode
 
 <img src="images/zone_empty.jpg" alt="LED Wiring" width="300px">
@@ -45,7 +43,7 @@ In addition, when a car is present and the system is in standby mode, you can wa
 **System Mode**: Standby (armed)<br>
 **Timers**: Inactive
 
-Once all zones have been cleared, the system is now "armed".  It is now ready to activate whenever any object is detected in any zone.  Normally this will be the Wake zone when a car approaches.
+Once all zones have been cleared, the system is now "armed".  It is now ready to activate whenever any object is detected entering any zone.  Normally this will be the Wake zone when a car approaches.
 
 ### Zone Entered
 

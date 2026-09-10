@@ -2,7 +2,7 @@
  * ESP32 Parking Assistant
  * Includes captive portal and OTA Updates
  * This provides code for an ESP32 controller and a WS2812b LED strip
- * Last Updated: August, 2026
+ * Last Updated: September, 2026
  * ResinChem Tech - Released under GNU General Public License v3.0.  There is no guarantee or warranty, either expressed or implied, as to the
  * suitability or utilization of this project, or as to the condition of this project, or whether it will be suitable to the users purposes or needs.
  * Use is solely at the end user's risk.
@@ -27,7 +27,7 @@
 #include <DNSServer.h>                  //Captive portal DNS server (for auto-launching: only works on some devices/operating systems)
 #include <Update.h>
 
-#define VERSION "v0.60"
+#define VERSION "v0.61"
 // =======================
 //  GPIO PINS
 // =======================
@@ -452,18 +452,6 @@ void setup() {
         pinMode(onboardLED_Pin, OUTPUT);
         digitalWrite(onboardLED_Pin, HIGH);
       }
-      //-----------------
-      // MQTT Setup
-      //-----------------
-      if (mqttEnabled) {
-        //Attempt to connect to MQTT broker - if fails, disable MQTT
-        if (!setup_mqtt()) {
-          mqttEnabled = false;
-        } else {
-          initialSyncRequired = true;
-          syncStep = 0;
-        }
-      }
       // -------------
       // SETUP FASTLED  
       // -------------
@@ -472,6 +460,21 @@ void setup() {
       FastLED.setCorrection(TypicalLEDStrip);
       FastLED.setMaxPowerInVoltsAndMilliamps(5, milliamps);
       FastLED.setBrightness(activeBrightness);
+
+      //-----------------
+      // MQTT Setup
+      //-----------------
+      if (mqttEnabled) {
+        //Attempt to connect to MQTT broker - if fails, disable MQTT
+        if (!setup_mqtt()) {
+          mqttEnabled = false;
+          mqttConnected = false;
+        } else {
+          initialSyncRequired = true;
+          syncStep = 0;
+        }
+      }
+
       // --------------
       // SETUP TFMINI
       // --------------
@@ -607,8 +610,14 @@ void loop() {
           carDetectedCounter = 0;
           nocarDetectedCounter = 0;
           carDetected = true;
-          exitSleepTimerStarted = false;
-          parkSleepTimerStarted = true;
+          if (coldStart) {
+            coldStart = false;
+            exitSleepTimerStarted = true;
+            parkSleepTimerStarted = false;
+          } else {
+            exitSleepTimerStarted = false;
+            parkSleepTimerStarted = true;
+          }
           startTime = currentMillis;
           FastLED.setBrightness(activeBrightness);
           isAwake = true;
@@ -713,7 +722,7 @@ void loop() {
         }
       }
     }
-    delay(100);
+    delay(150);
   }
 }
 
@@ -1158,6 +1167,7 @@ void setupWebHandlers() {
   server.on("/savediscovery", handleDiscoverySave);
   //Controller Functions
   server.on("/restart", webRestartPage);
+  server.on("/reset",  webResetPage);
   server.on("/firmwareupdate", webFirmwareUpdate);
   server.on("/update", HTTP_POST, []() {
     handleWebUpdateEnd();
@@ -1669,8 +1679,8 @@ void webSystemPageJson() {
     doc["led_park_time"] = maxOperationTimePark;
     doc["led_exit_time"] = maxOperationTimeExit;
     doc["use_side_sensor"] = ((useSideSensor) ? 1 : 0);
-    doc["tof_dat_pin"] = ((useSideSensor) ? tofDat_Pin : 0);
-    doc["tof_clk_pin"] = ((useSideSensor) ? tofClk_Pin : 0);
+    doc["tof_dat_pin"] = tofDat_Pin; 
+    doc["tof_clk_pin"] = tofClk_Pin; 
     doc["side_sensor_pos"] = ((useSideSensor) ? sideSensorPos : 0);
     doc["no_wifi_mode"] = ((noWiFiMode) ? 1 : 0);
     doc["manual_ap_name"] = manualAPName;
@@ -1702,9 +1712,10 @@ void handleSystem() {
     nocarDetectedCounterMax = server.arg("debounce").toInt();
     maxOperationTimePark = server.arg("parktime").toInt();
     maxOperationTimeExit = server.arg("exittime").toInt();
-
-    tofDat_Pin = useSideSensor ? server.arg("tofdatpin").toInt() : 0;
-    tofClk_Pin = useSideSensor ? server.arg("tofclkpin").toInt() : 0;
+    if (useSideSensor) {
+      tofDat_Pin = server.arg("tofdatpin").toInt();
+      tofClk_Pin = server.arg("tofclkpin").toInt();
+    }
     sideSensorPos = useSideSensor ? server.arg("sidepos").toInt() : 0;      //0=unused, 1=right, 2=left
 
     if (noWiFiMode) {
@@ -2548,21 +2559,39 @@ bool setup_mqtt() {
   #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
     Serial.print("Connecting to MQTT broker.");
   #endif
+  if (useBootLightsLED) {
+    fill_solid(LEDs, numLEDs, CRGB::Black);
+    FastLED.show();
+  }
   while (!client.connected( )) {
     #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
       Serial.print(".");
     #endif
+    if (useBootLightsLED) {
+        LEDs[mcount] = CRGB::Lime;
+        FastLED.show();
+    }
     client.connect(mqttClient.c_str(), mqttUser.c_str(), mqttPW.c_str(), statusTopic.c_str(), 1, true, "offline");
 
-    if (mcount >= 30) {
+    if (mcount >= 10) {
       #if defined(SERIAL_DEBUG) && (SERIAL_DEBUG == 1)
         Serial.println();
         Serial.println("Could not connect to MQTT broker. MQTT disabled.");
       #endif
       // Could not connect to MQTT broker
+      if (useBootLightsLED) {
+        //Flash yellow
+        for (int i = 0; i < 3; i++) {
+          fill_solid(LEDs, numLEDs, CRGB::Yellow);
+          FastLED.show();
+          delay(250);
+          fill_solid(LEDs, numLEDs, CRGB::Black);
+          delay(250);
+        }
+      }
       return false;
     }
-    delay(500);
+    delay(250);
     yield();
     mcount++;
   }

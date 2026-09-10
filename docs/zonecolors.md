@@ -27,7 +27,7 @@ Zone | LED Strip
 Wake | When a vehicle first enters the Wake zone, all LEDs will light up in the Wake Zone color.
 Active|The LEDs will begin to light up using this color and the selected Effect (see below).
 Parked|The entire LED strip will light up in this color.
-Backup|If the vehicle pulls too far forward and enters the Backup Zone, the entire LED strip will rapidly flash in this color.
+Backup|If the vehicle pulls too far forward and enters the Backup Zone, the entire LED strip will rapidly flash in this color.  Also used as the lateral guidance color (see below).
 Standby|A special color for when the system is in sleep/standby mode.  Only lights one LED on each end of the strip in the selected color (and with the standby brightness). See below for more information on the Standby color and mode.
 
 ---
@@ -125,7 +125,7 @@ At any point in time, you can reset the colors, effect and brightnesses to the l
 <img src="images/zonedistance_defaultmsg.jpg" alt="Zone Apply Msg" width="220px">
 
 ### Saving Distances
-Once you have your options set as desired and wish to make them the new default values, be sure to save them the 'Set as Defaults' button.  This will write your current selections to the saved configuration file, reboot the system, and load up these new values.
+Once you have your options set as desired and wish to make them the new default values, be sure to save them using the 'Set as Defaults' button.  This will write your current selections to the saved configuration file, reboot the system, and load up these new values.
 
 >⚠️ **IMPORTANT**<br>If you do not save your new options and the controller restarts for _any reason_ (power outage, etc.), then the last saved colors, effect and brightnesses will be used.  Just assure you click the 'Save as Defaults' if you wish to make your selections the new defaults.
 {: .important}

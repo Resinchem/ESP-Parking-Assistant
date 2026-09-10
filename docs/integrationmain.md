@@ -14,7 +14,7 @@ has_toc: false
 <p align="center">
   <img src="images/integrationmain_01.jpg" alt="Integrations Overview">
 </p>
-This section is for those who prefer to let their LEDs take orders from a script rather than a finger or sensor. Whether you're a Home Assistant power user or a terminal enthusiast, these tools let you bypass the UI and talk directly to the hardware. 🛠️
+This section is for those who prefer to let their LEDs take orders from a script rather than a sensor. Whether you're a Home Assistant power user or a terminal enthusiast, these tools let you bypass the UI and talk directly to the hardware. 🛠️
 
 <i>Note that use of these integration methods are entirely optional and are not required for any functionality of the Parking Assistant.</i>
 

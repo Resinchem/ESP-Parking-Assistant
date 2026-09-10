@@ -1,4 +1,4 @@
-//v0.60
+//v0.61
 // Literal strings
 const char *html_footer = R"literal(
   <footer>
@@ -881,7 +881,7 @@ const char *systempage = R"literal(
           <td>&nbsp;</td>
         </tr><tr>
           <td>Sensor Clock Pin:</td>
-          <td><input type="number" id="tofclkpin" name="tofclkpin" min="1" max="39" step="1" style="width: 30px;" value="21"></td>
+          <td><input type="number" id="tofclkpin" name="tofclkpin" min="1" max="39" step="1" style="width: 30px;" value="22"></td>
           <td>&nbsp;</td>
         </tr><tr>
           <td>Mount Location:</td>
@@ -959,13 +959,8 @@ const char *systempage = R"literal(
             document.getElementById("debounce").value = data.no_car_debounce;
             document.getElementById("parktime").value = data.led_park_time;
             document.getElementById("exittime").value = data.led_exit_time;
-            if (useSideSensor == 1) {
-              document.getElementById("tofdatpin").value = data.tof_dat_pin;
-              document.getElementById("tofclkpin").value = data.tof_clk_pin;
-            } else {
-              document.getElementById("tofdatpin").value = 0;
-              document.getElementById("tofclkpin").value = 0;
-            }
+            document.getElementById("tofdatpin").value = data.tof_dat_pin;
+            document.getElementById("tofclkpin").value = data.tof_clk_pin;
             if (Number(data.side_sensor_pos) == 1) {
               document.getElementById("sideright").checked = true;
             } else {

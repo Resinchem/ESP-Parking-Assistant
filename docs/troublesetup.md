@@ -32,7 +32,7 @@ When you connect your ESP32 to your PC, you must select a COM port. If no new po
 * **CH342, CH343, CH9102 Drivers:** **[Windows](https://www.wch.cn/downloads/CH343SER_ZIP.html)** \| **[Mac](https://www.wch.cn/downloads/CH34XSER_MAC_ZIP.html)**
 * **CH340, CH341 Drivers:** **[Windows](https://www.wch.cn/downloads/CH341SER_ZIP.html)** \| **[Mac](https://www.wch.cn/downloads/CH341SER_MAC_ZIP.html)**
 
-*If the driver pages appear in Chinese, right-click and select "Translate to English" in your browser, or look for the "down arrow" (↓) download button. I did not develop nor am I responsible for these drivers.*
+*If the driver pages appear in Chinese, right-click and select "Translate to English" in your browser, or look for the "down arrow" (↓) download button. I did not develop nor am I responsible for these drivers. Install and use at your own risk!*
 
 ### ESP32 Will Not Connect
 If the drivers are installed but the board won't connect, you may need to perform the "Boot Button Dance" to force the board into flashing mode:

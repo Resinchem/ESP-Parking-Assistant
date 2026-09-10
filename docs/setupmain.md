@@ -15,13 +15,14 @@ has_toc: false
   <img src="images/setupmain_01.jpg" alt="System Setup Header">
 </p>
 
-Once the system has been onboarded and the controller is booting normally, you can begin to configure the system for your particular hardware and needs.  This includes options like the number of LEDs, sensor settings and other global options.
+Once the system has been onboarded and the controller is booting normally, you can begin to configure the system for your particular hardware and specific parking needs.  This includes options like the number of LEDs, sensor settings and other global options.
 
-This section covers the core configuration of your hardware and default settings:
+This section covers the core configuration of your hardware and the default system settings:
 
 * **[Web App Overview]({{ '/webapp' | relative_url }})** - Accessing the app and understanding the interface.
 * **[Initial Hardware Configuration]({{ '/initconfig' | relative_url }})** - Setting up the system for your exact hardware.
 * **[Sensor Calibration]({{ '/sensorcalibrate' | relative_url }})** - See raw readings from your sensor(s).  Used to assist in setting zone distances.
+* **[Access Point Mode]({{ '/apmode' | relative_url }})** - Configure the system to work in a situation where WiFi may not be available.
 
 > **💡 Configuration Logic**<br>It is important to understand that the system manages two distinct "sets" of settings:
 > * **Default Settings:** Saved values loaded when the system first starts up or reboots.

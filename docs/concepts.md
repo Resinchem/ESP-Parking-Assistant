@@ -37,9 +37,9 @@ The primary controller consists of a standard ESP32 (WROOM-32) and a _recommende
 
 The system is designed to only work with 5V WS2812b LED strips.  Use of other 5V LED types will require modification of the source code and your own complied version.  Use of 12V or 24V are not supported, as generally these can only control the LEDs in groups of three or six, respectively.  This system needs to control each LED individually, which is normally only found when using 5V addressable LED strips.
 
-The system can theoretically support up to 600 LEDs.  But to minimize the power required (and therefore the wiring), a strip of around 2 feet long is recommended.  This will be around 25 standard LEDs when using a common 60 LEDs/m version.  Alternatively, and to provide greater sensitivity, you can substitute a WS2812b COB LED strip.  Using a version of 160 LEDs/m allows around 100 LEDs in the same 2 foot width, while also drawing about the same amount of current (give or take a bit).
+The system can theoretically support up to 600 LEDs.  But to minimize the power required (and therefore the wiring), a strip of around 2 feet long is recommended.  This will be around 35 standard LEDs when using a common 60 LEDs/m version.  Alternatively, and to provide greater sensitivity, you can substitute a WS2812b COB LED strip.  Using a version of 160 LEDs/m allows around 100 LEDs in the same 2 foot width, while also drawing about the same amount of current (give or take a bit).
 
-Ideally, you want to keep the current amp draw of the LEDs to around 2.5A or lower when fully lit at expected brightness.  Exceeding this value will require different power routing (e.g. extra power lines directly to the LEDs). Again, refer to the [build guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) for more information on the LED strips, power supplies and wiring.
+Ideally, you want to keep the current draw of the LEDs to around 2.5A or lower when fully lit at expected brightness.  Exceeding this value will require different power routing (e.g. extra power lines directly to the LEDs). Again, refer to the [build guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) for more information on the LED strips, power supplies and wiring.
 
 ## Sensor(s)
 <p align="center">
@@ -65,7 +65,7 @@ One important note.  Be sure to purchase a TFMini-s (the -s is important).  Othe
 
 ### Optional Secondary (Side) Sensor
 
-While not required, you can add a side sensor to the system to provide both lateral guidance and to improve the front sensor accuracy.  But in this case, and because the side sensor needs neither the range nor the precision of the front sensor, this does use a much lower cost VL53L0X sensor.  However, just like the front sensor, the firmware is written for this particular component.  Substitutions will likely require firmware modification.
+While not required, you can add a side sensor to the system to provide both lateral guidance and to improve the front sensor accuracy.  In this case, and because the side sensor needs neither the range nor the precision of the front sensor, it uses a much lower cost VL53L0X sensor.  However, just like the front sensor, the firmware is written for this particular component.  Substitutions will likely require firmware modification.
 
 ## Other Important Terminology
 There are a few other important terms to understand... at least as far as this guide is concerned.

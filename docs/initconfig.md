@@ -19,7 +19,7 @@ After initial onboarding, you may find that the system doesn't operate or isn't 
 >👉 **GPIO Pins**<br>The system allows you to use different GPIO pins for your devices other than the defaults provided with the firmware.  But note that you cannot use GPIO 0 for any of your settings.  While GPIO 0 is a valid GPIO pin on most ESP32s, within the context of this application, using "0" as a GPIO pin means that device is not used.  Do not set any GPIO pins to "0" unless you truly are not using that device/connection.  Use of strapping pins is also discouraged, but not enforced by the application.
 {: .note }
 
-The primary controller is the one connected to the LEDs and if you are using wired controllers, it will be the only controller.  Begin by opening the integrated web app by just going to the IP address of the controller in a web browser of any machine on the same network.
+Begin by opening the integrated web app by just going to the IP address of the controller in a web browser of any machine on the same network.
 
 Near the top of the main page, you will see a System Configuration section with a Hardware Settings button:<br><br>
 <img src="images/initconfig_optionblock.jpg" alt="Option Block" width="300"><br><br>
@@ -72,9 +72,10 @@ LEDs can draw a lot of current!  As an extra safety precaution, this setting att
 
 It is recommended that you set this value to no more than approximately 80% of the peak max rating of your power source.  For example, if using a 3A power supply, set this value to around 2.4 amps.  
 
-Setting this limit prevents your LEDs from attempting to pull 1.21 gigawatts through a 28-gauge breadboard jumper! You're building a garage parking assistant, not a flux capacitor—cap the current draw at ~80% of your power supply's peak rating.
+> **⚠️ DON'T OVERTAX YOUR SYSTEM!**<br>Setting a current limit prevents your LEDs from attempting to pull 1.21 gigawatts through a 28-gauge breadboard jumper! You're building a garage parking assistant, not a flux capacitor—cap the current draw at ~80% of your power supply's peak rating.
+{: .important}
 
-If you find that the limiter is making the LEDs too dim, even at the highest brightness, it is an indication that your power supply is too small.  See information in the [Build Guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) for more information on selecting the proper power supply size (and special wiring for high current draw systems).
+If you find that the limiter is making the LEDs too dim, even at the highest brightness, it is an indication that your power supply is too small.  See information in the [Build Guide](https://resinchemtech.blogspot.com/2026/08/parking-assistant-2026.html) for more information on selecting the proper power supply size (and special wiring that is required for high current draw systems).
 
 ## Sensor Configuration
 This is where you configure the front sensor, and optionally enable and configure a side sensor for lateral guidance.
@@ -119,6 +120,10 @@ Mount Location|Left|Indicates whether the side sensor is mounted to the left or 
 
 Side Sensor Positioning:<br>
 <img src="images/initconfig_sidesensor_pos.jpg" alt="Side Sensor Pos" width="300px">
+
+**<u>Side Sensor Won't Remain Enabled</u>**
+<br>If the side sensor is not present or it cannot be initialized during the boot process, the Side Sensor setting will automatically be set to 'Off/Disabled', regardless of the default setting.  If you find that after enabling the side sensor, it still shows as disabled after rebooting, check your side sensor and wiring.<br><br>In addition, the LED strip will briefly flash orange during the [Boot Process](booting) when the side sensor setting is enabled but the sensor fails initialization.
+
 
 ## Access Point Mode (no WiFI)
 If you plan on installing your system in a location where WiFi is unreliable or unavailable, you can toggle the system into AP mode and disable WiFi.

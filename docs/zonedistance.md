@@ -31,10 +31,10 @@ Zone distances are entered and applied from the main web application page.
 
 Distances are entered in your preferred unit of measure, inches or millimeters.  You can change this at any time via the [Hardware Settings](initconfig).  When you switch units, any current distance values are automatically converted for you.  When using inches, you may enter tenths of an inch.  Millimeters can only be entered as whole values.
 
->🧮 **Unit Conversions**<br>Internally, the system always uses millimeters.  When inches are selected, an internal conversion is used for displaying and saving the millimeter values as inches.  Converting back and forth may result in a small change (one millimeter or maybe a tenth of an inch) due to simply rounding.  If you switch units after the system has been configured, you should verify distances after conversion.
+>🧮 **Unit Conversions**<br>Internally, the system always uses millimeters.  When inches are selected, an internal conversion is used for displaying and saving the millimeter values as inches.  Converting back and forth may result in a small change (one millimeter or maybe a tenth of an inch) simply due to rounding.  If you switch units after the system has been configured, you should verify distances after conversion.
 {: .note}
 
-**Sensor Override**: The Sensor Override is used to bypass any sensor readings to take manual control of the LED strip.  This is normally done when using an external system via MQTT or Home Assistant Discovery to control the LEDs.  See the separate topic [Overriding the Sensors](sensoroverride) for more information.
+**Sensor Override**: The Sensor Override is used to bypass any sensor readings to take manual control of the LED strip.  This is normally done when using an external system via MQTT or Home Assistant to control the LEDs.  See the separate topic [Overriding the Sensors](sensoroverride) for more information.
 
 ### General Zone Distance Entry Notes
 Refer to the diagram at the top of this page.

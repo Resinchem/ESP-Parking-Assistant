@@ -1,0 +1,12 @@
+{
+  "name": "ESP Parking Assistant",
+  "version": "0.61",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "ParkingAsst_v0.61_Full.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

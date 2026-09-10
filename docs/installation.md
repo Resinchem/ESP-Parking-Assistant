@@ -22,7 +22,9 @@ The first step in preparing your ESP32 hardware is flashing the initial firmware
 Before proceeding, determine which of the following three installation scenarios applies to your system:
 
 1. **🆕 New Build / Fresh Board:** You are flashing a brand-new ESP32 or completely resetting a board. **Stay on this page and use the WebSerial flasher below.**
+
 2. **🔄 Routine Firmware Update (v0.60 to v0.61+):** Do **NOT** use this page. Routine updates are applied wirelessly using the [Firmware Upgrade]({{ '/firmwareupdates' | relative_url }}) feature inside your running system's web interface.
+
 3. **⚠️ Migrating from v0.52 or Earlier:** Stop here! Due to partition layout changes in v0.60+, wireless OTA updates from legacy versions are not recommended. Please follow the step-by-step **[v0.52 to v0.60 Migration Guide]({{ '/migration' | relative_url }})**.
 
 ---
@@ -31,7 +33,7 @@ Before proceeding, determine which of the following three installation scenarios
 
 To complete the USB installation on this page, you will need:
 
-* **Hardware:** A computer with an available USB port and a **microUSB or USB-C Data Cable**. (Note: "Power-only" charging cables will not work).
+* **Hardware:** A computer with an available USB port and a **microUSB Data Cable**. (Note: "Power-only" charging cables will not work).
 * **Software:** A Chromium-based desktop browser (Google Chrome, Microsoft Edge, Brave, or Arc) version 89 or newer.
 * **Firmware File:** The installer below automatically fetches the latest stable binary (`ParkingAsst_vX.XX_Full.bin`), but versions following v0.60 will allow selecting which version to install. If you prefer traditional desktop tools or want to install a version prior to v0.60, download the file from the [GitHub Releases](https://github.com/Resinchem/ESP-Parking-Assistant/releases) page.
 

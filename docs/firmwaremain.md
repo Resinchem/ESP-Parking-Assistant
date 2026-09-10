@@ -24,6 +24,7 @@ These sections cover the methods for installing official firmware updates and pr
 ### In This Section
 
 * **[Installing Official Firmware Updates]({{ '/firmwareupdates' | relative_url }})** – Detailed steps for updating the Primary and Wireless Sensor controllers wirelessly or via USB.
+* **[v0.5x Migration Guide]({{ '/migration' | relative_url }})** - Special instructions for upgrading systems that are running firmware versions 0.52 or earlier.
 * **[Modifying the Firmware]({{ '/modifications' | relative_url }})** – Tips, tools, and structural information for those interested in customizing the C++, HTML, or CSS.
 
 ---

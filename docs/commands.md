@@ -24,7 +24,10 @@ The main page of the web application offers a set of standard controller command
 
 ### Firmware Upgrade
 
-This opens up a page for applying firmware updates from a compiled `_Update.bin` file, normally from the repository's Releases page.  You cannot upgrade using the source (.ino) files, but only with a compiled .bin file.
+_**This feature is not available when operating in AP Mode!**_
+{: .label .label-yellow }
+
+This opens up a page for applying firmware updates from a compiled `_Update.bin` file, normally from the repository's [Releases](https://github.com/Resinchem/ESP-Parking-Assistant/releases/latest) page.  You cannot upgrade using the source (.ino) files, but only with a compiled .bin file.
 
 
 > **⚠️ Warning**<br>Installing the wrong firmware file on the controller will break your system. See [Installing Updates]({{ '/firmwareupdates' | relative_url }}) before proceeding.
@@ -33,15 +36,17 @@ This opens up a page for applying firmware updates from a compiled `_Update.bin`
 Installing firmware updates are covered in a separate upcoming topic or you can use the link in the box above to jump directly there now.
 
 ### Arduino OTA
+_**This feature is not available when operating in AP Mode!**_
+{: .label .label-yellow }
+
 This can be used to place the system in a special programming mode, where a modified source code version of the firmware is compiled and installed wirelessly to the controller.  Each controller broadcasts a special message that is used as a "port" in the Arduino IDE.
 
 <img src="images/commands_arduinoports.jpg" alt="Arduino Ports" width="300px">
 
 The port will show the device name followed by _OTA and the IP address of the controller.  Make sure when using this method that you are flashing the correct code to the correct controller.  As you can see in the above example, I have two Parking Assistants active on the network.  I can differentiate them not only by the IP address, but also by the device name I assigned during onboarding.
 
-> **🌐 Port Not Found**<br>The Arduino OTA process requires that your network support and allow mDNS broadcasts.  This in an Arduino requirement and not a firmware issue.  If you cannot or prefer not to allow mDNS broadcasts, then any Arduino updates cannot be done wirelessly and you will need to use a USB cable connection for uploads.
+> **🌐 Port Not Found**<br>The Arduino OTA process requires that your network support and allow mDNS broadcasts.  This is an **Arduino requirement** and not a firmware issue.  If you cannot (or prefer not to) allow mDNS broadcasts, then any Arduino updates cannot be done wirelessly and you will need to use a USB cable connection for uploads.
 {: .note }
-
 
 Once your new code is verified and ready for upload, click the 'Arduino OTA' button.  When activated, the LEDs will display an alternating Red-Green pattern
 
@@ -73,16 +78,13 @@ This can be handy for troubleshooting and you may also be asked for the contents
 > **👁️ Home Assistant Discovery Config**<br>If you have enabled Home Assistant Discovery, the config dump from the primary controller will also include a second configuration file for the Discovery process.  If Discovery is not enabled, this just includes a message to that effect.  See the [Home Assistant Discovery](discoverymain)  topic for more information.
 {: .note }
 
-
 ### System Info
 
-This is the only controller command that is unique to the primary controller and is not available on wireless sensor controllers.
-
-The system info is more or less an expanded version of the config dump, presented as plain text.
+The system info is a plain text version of your system's settings.
 
 <img src="images/commands_sysinfo.jpg" alt="Sys Info" width="300px">
 
-This contains much of the same information as the Config Dump, but in addition to saved default values, it also shows the current system's ACTIVE values.  This can also be a handy troubleshooting tool if the system isn't behaving as expected.
+This contains much of the same information as the Config Dump, but in addition to saved default values, it also shows the current system's ACTIVE values.  It also shows some additional system information.  This can also be a handy troubleshooting tool if the system isn't behaving as expected.
 
 ### Reset All
 
@@ -91,12 +93,14 @@ This performs a "factory reset" on the controller, wiping out all saved configur
 > **❗ HIGH RISK**<br>This command wipes **ALL** configuration data from the controller, including saved Wi-Fi credentials. Use this only if you intend to return the controller to its original installation state. You will have to repeat the [Onboarding]({{ '/onboarding' | relative_url }}) and [System Setup]({{ '/setupmain' | relative_url }}) processes.
 {: .warning }
 
+**_If using AP Mode, you will need to move the controller to a WiFi area for the onboarding step after resetting!_**
+{: .label .label-yellow }
 
 ### External Control
 Some of these commands can also be sent via MQTT or via the HTTP API.  See [Using MQTT and the API]({{ '/integrationmain' | relative_url }}) for a list of applicable commands.
 
 ## Next Steps
-This completes the normal setup and operation of the system.  The remaining sections of the guide cover optional features like MQTT or Home Assistant integration, upgrading or modifying the firmware, advanced technical information and a troubleshooting section.
+This completes the normal setup and operation of the system.  The remaining sections of the guide cover optional features like MQTT and Home Assistant integration, upgrading or modifying the firmware, advanced technical information and a troubleshooting section.
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; border-top: 1px solid #333; padding-top: 20px;">
   <a href="{{ '/sensoroverride' | relative_url }}" class="btn btn-outline"><- Previous: Overriding the Sensors</a>

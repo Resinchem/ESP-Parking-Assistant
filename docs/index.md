@@ -11,7 +11,7 @@ has_toc: false
 ---
 <p align="center">
   <img src="images/index_top_thumb.jpg" width="350">
-</p>
+</p> 
 
 
 This site contains information regarding the installation, configuration and use of the firmware for this project. This includes the installation, onboarding, configuration and general use of the embedded web application.<br>
